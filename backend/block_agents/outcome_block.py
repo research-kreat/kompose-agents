@@ -13,3 +13,4 @@ class OutcomeBlockHandler(BaseBlockHandler):
             "analysis": "You've described a noteworthy outcome or result to aim for.",
             "suggestion": "Would you like to generate a title for this outcome?"
         }
+ 

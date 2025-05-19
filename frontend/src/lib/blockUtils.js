@@ -61,111 +61,111 @@ export const getKomposeTasks = () => {
   return [
     {
       id: 1,
-      title: "Initial Classification",
-      description: "Categorize and define the business concept",
+      title: "Initial Classification Matrix",
+      description: "Categorize the business across multiple dimensions",
       icon: "fa-tag"
     },
     {
       id: 2,
-      title: "Business Idea Generation",
-      description: "Create the core business concept and value proposition",
-      icon: "fa-lightbulb"
+      title: "Similar Business Analysis Matrix",
+      description: "Compare with existing businesses in the market",
+      icon: "fa-building"
     },
     {
       id: 3,
-      title: "Market Analysis",
-      description: "Analyze the target market size and opportunities",
+      title: "Market Opportunity Grid",
+      description: "Assess market opportunities and growth potential",
       icon: "fa-chart-pie"
     },
     {
       id: 4,
-      title: "Customer Segmentation",
-      description: "Define the ideal customer profiles and segments",
-      icon: "fa-users"
+      title: "Market Trends Heat Map",
+      description: "Identify key market trends and their impact",
+      icon: "fa-fire"
     },
     {
       id: 5,
-      title: "Value Proposition",
-      description: "Articulate the unique value offered to customers",
-      icon: "fa-award"
-    },
-    {
-      id: 6,
-      title: "Business Model",
-      description: "Structure the revenue model and pricing strategy",
-      icon: "fa-money-bill-wave"
-    },
-    {
-      id: 7,
-      title: "Competitor Analysis",
-      description: "Evaluate existing competitors and market positioning",
+      title: "Competition Analysis Matrix",
+      description: "Analyze direct and indirect competitors",
       icon: "fa-chess"
     },
     {
+      id: 6,
+      title: "Opportunity Assessment Matrix",
+      description: "Evaluate business opportunities and risks",
+      icon: "fa-search"
+    },
+    {
+      id: 7,
+      title: "Key Success Factors Matrix",
+      description: "Identify critical factors for success",
+      icon: "fa-key"
+    },
+    {
       id: 8,
-      title: "SWOT Analysis",
-      description: "Assess strengths, weaknesses, opportunities and threats",
-      icon: "fa-balance-scale"
-    },
-    {
-      id: 9,
-      title: "Marketing Strategy",
-      description: "Develop go-to-market and customer acquisition approach",
-      icon: "fa-bullhorn"
-    },
-    {
-      id: 10,
-      title: "Product Development Roadmap",
-      description: "Plan the evolution of the product or service",
-      icon: "fa-road"
-    },
-    {
-      id: 11,
-      title: "Financial Projections",
-      description: "Forecast revenue, costs, and profitability",
+      title: "Growth Drivers Matrix",
+      description: "Identify key drivers for business growth",
       icon: "fa-chart-line"
     },
     {
-      id: 12,
-      title: "Team Structure",
-      description: "Define organizational roles and responsibilities",
-      icon: "fa-users-cog"
+      id: 9,
+      title: "Investment Landscape Matrix",
+      description: "Analyze the investment environment",
+      icon: "fa-money-bill-wave"
     },
     {
-      id: 13,
-      title: "Go-to-Market Strategy",
-      description: "Plan the launch and market entry approach",
-      icon: "fa-rocket"
-    },
-    {
-      id: 14,
-      title: "Risk Assessment",
-      description: "Identify and mitigate potential challenges",
-      icon: "fa-exclamation-triangle"
-    },
-    {
-      id: 15,
-      title: "Technology Requirements",
-      description: "Determine technical infrastructure needed",
+      id: 10,
+      title: "Technology Stack Requirements",
+      description: "Determine technical needs and solutions",
       icon: "fa-microchip"
     },
     {
-      id: 16,
-      title: "Scalability Plan",
-      description: "Develop strategy for growth and expansion",
-      icon: "fa-expand-arrows-alt"
-    },
-    {
-      id: 17,
-      title: "Legal and Regulatory Considerations",
-      description: "Address compliance and legal requirements",
+      id: 11,
+      title: "Regulatory Environment Matrix",
+      description: "Assess regulatory considerations",
       icon: "fa-gavel"
     },
     {
+      id: 12,
+      title: "Supply Chain Analysis",
+      description: "Analyze supply chain components and innovations",
+      icon: "fa-truck"
+    },
+    {
+      id: 13,
+      title: "Customer Experience Mapping",
+      description: "Map customer journey touchpoints",
+      icon: "fa-users"
+    },
+    {
+      id: 14,
+      title: "Resource Requirements Matrix",
+      description: "Identify personnel and operational resources needed",
+      icon: "fa-clipboard-list"
+    },
+    {
+      id: 15,
+      title: "Risk Assessment Matrix",
+      description: "Evaluate business risks and mitigation strategies",
+      icon: "fa-exclamation-triangle"
+    },
+    {
+      id: 16,
+      title: "Unit Economics Baseline",
+      description: "Analyze key financial metrics",
+      icon: "fa-calculator"
+    },
+    {
+      id: 17,
+      title: "Market Size Segmentation",
+      description: "Calculate TAM, SAM, and SOM",
+      icon: "fa-chart-bar"
+    },
+    {
       id: 18,
-      title: "Implementation Action Plan",
-      description: "Create detailed execution strategy and timeline",
-      icon: "fa-tasks"
+      title: "Competitive Moat Analysis",
+      description: "Analyze potential competitive advantages",
+      icon: "fa-shield-alt"
     }
   ];
 };

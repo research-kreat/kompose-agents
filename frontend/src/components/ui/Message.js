@@ -89,7 +89,8 @@ export default function Message({ message, isLast }) {
     growth_drivers: "Growth Drivers",
     business_structure: "Business Structure",
     strategic_partners: "Strategic Partners",
-    months_1_3: "First 3 Months Plan"
+    months_1_3: "First 3 Months Plan",
+    matrix_data: "Matrix Data"
   };
   
   // Scroll into view if it's the last message
@@ -168,6 +169,63 @@ export default function Message({ message, isLast }) {
     fullResponse && 
     fullResponse.task_number && 
     fullResponse.task_title;
+
+  // Render matrix table for Kompose task results
+  const renderMatrixTable = (matrixData) => {
+    if (!matrixData || typeof matrixData !== 'object') return null;
+    
+    // Get column headers (keys) and rows (values)
+    const columnKeys = Object.keys(matrixData);
+    if (columnKeys.length === 0) return null;
+    
+    // All arrays should be the same length, use the first one to determine rows
+    const firstColumn = matrixData[columnKeys[0]];
+    if (!Array.isArray(firstColumn) || firstColumn.length === 0) return null;
+    
+    const rowCount = firstColumn.length;
+    
+    return (
+      <div className="overflow-x-auto max-w-full">
+        <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
+          <thead className="bg-gray-50">
+            <tr>
+              {columnKeys.map((key, index) => (
+                <th 
+                  key={index} 
+                  scope="col" 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200"
+                >
+                  {key}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {/* Generate rows based on the number of items in the first column */}
+            {Array.from({ length: rowCount }).map((_, rowIndex) => (
+              <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                {columnKeys.map((columnKey, colIndex) => {
+                  const cellData = matrixData[columnKey][rowIndex];
+                  
+                  return (
+                    <td 
+                      key={colIndex} 
+                      className="px-6 py-4 whitespace-normal text-sm text-gray-500 border-r border-gray-200 last:border-r-0"
+                      dangerouslySetInnerHTML={{ 
+                        __html: typeof cellData === 'string' 
+                          ? cellData.replace(/\n/g, '<br>') 
+                          : String(cellData)
+                      }}
+                    />
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
   
   // Special rendering for system messages
   if (role === 'system') {
@@ -203,12 +261,20 @@ export default function Message({ message, isLast }) {
         </div>
         
         <div className="p-4 space-y-4">
-          {/* Render each key in the task result */}
+          {/* Render matrix table if it exists */}
+          {fullResponse.matrix_data && (
+            <div className="mb-4">
+              {renderMatrixTable(fullResponse.matrix_data)}
+            </div>
+          )}
+          
+          {/* Render other properties (excluding special ones) */}
           {Object.keys(fullResponse).filter(key => 
             key !== 'task_number' && 
             key !== 'task_title' && 
             key !== 'error' &&
-            key !== 'raw_result'
+            key !== 'raw_result' &&
+            key !== 'matrix_data'
           ).map(key => (
             <div 
               key={key}

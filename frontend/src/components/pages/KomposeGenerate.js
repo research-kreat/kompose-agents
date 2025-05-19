@@ -17,7 +17,6 @@ export default function KomposeGenerate() {
   const [currentStep, setCurrentStep] = useState(0);
   const [userPrompt, setUserPrompt] = useState('');
   const [generationId, setGenerationId] = useState(null);
-  const messagesEndRef = useRef(null);
   
   // Get all tasks
   const allTasks = getKomposeTasks();
@@ -58,18 +57,11 @@ export default function KomposeGenerate() {
     });
     
     // Cleanup on unmount
-    return () => clearInterval(statusCheckInterval);
+    return () => clearInterval(statusCheckInterval.current);
   }, []);
   
   // Ref for status check interval
   const statusCheckInterval = useRef(null);
-  
-  // Scroll to bottom when results change
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [results, isGenerating, currentStep]);
   
   // Function to check generation status
   const checkGenerationStatus = async (blockId) => {
@@ -82,6 +74,63 @@ export default function KomposeGenerate() {
       // Update current step based on tasks completed
       if (status.tasks_completed > currentStep) {
         setCurrentStep(status.tasks_completed);
+        
+        // If a new task was completed, fetch the task data
+        if (status.tasks_completed > 0) {
+          // Fetch the block to get latest messages
+          const blockData = await api.getBlock({
+            blockId,
+            userId
+          });
+          
+          // Find the message corresponding to the latest completed task
+          const taskMessages = blockData.messages.filter(msg => 
+            msg.role === 'assistant' && 
+            msg.result && 
+            msg.result.task_number === status.tasks_completed
+          );
+          
+          if (taskMessages.length > 0) {
+            const latestTaskMessage = taskMessages[0];
+            const formattedMessage = {
+              role: 'assistant',
+              content: `Task ${status.tasks_completed}: ${latestTaskMessage.result.task_title}`,
+              timestamp: latestTaskMessage.created_at || new Date().toISOString(),
+              fullResponse: latestTaskMessage.result
+            };
+            
+            // Add this message to history
+            setMessageHistory(prevMessages => [
+              ...prevMessages.filter(msg => 
+                !(msg.fullResponse && msg.fullResponse.task_number === status.tasks_completed)
+              ),
+              formattedMessage
+            ]);
+            
+            // Add to results
+            const formattedResult = formatTaskResult(latestTaskMessage.result);
+            setResults(prevResults => {
+              const existingIndex = prevResults.findIndex(r => 
+                r.taskInfo && r.taskInfo.id === status.tasks_completed
+              );
+              
+              if (existingIndex >= 0) {
+                // Replace existing result
+                const newResults = [...prevResults];
+                newResults[existingIndex] = formattedResult;
+                return newResults;
+              } else {
+                // Add new result
+                return [...prevResults, formattedResult];
+              }
+            });
+            
+            addLog({
+              type: 'success',
+              message: `Completed task ${status.tasks_completed}: ${latestTaskMessage.result.task_title}`
+            });
+          }
+        }
         
         // If generation is complete, fetch all messages
         if (status.status === 'complete') {
@@ -255,8 +304,8 @@ export default function KomposeGenerate() {
               <i className="fas fa-lightbulb text-primary text-xl"></i>
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-gray-800">One-Click Business Generation</h2>
-              <p className="text-gray-600">Generate a complete business idea with all 18 analytical tasks</p>
+              <h2 className="text-xl font-semibold text-gray-800">One-Click Business Analysis Matrix Generator</h2>
+              <p className="text-gray-600">Generate a complete business idea with all 18 analytical matrix tasks</p>
             </div>
           </div>
           
@@ -268,7 +317,7 @@ export default function KomposeGenerate() {
               id="userPrompt"
               value={userPrompt}
               onChange={handlePromptChange}
-              placeholder="e.g., A sustainable fashion marketplace for recycled clothing, or an AI-powered health monitoring app for seniors..."
+              placeholder="e.g., A sustainable fashion marketplace for recycled clothing, Zepto for Fashion, or an AI-powered health monitoring app for seniors..."
               disabled={isGenerating}
               className="w-full p-3 border border-gray-300 rounded-lg resize-none h-20 focus:ring-primary focus:border-primary"
               required={true}
@@ -291,7 +340,7 @@ export default function KomposeGenerate() {
               ) : (
                 <>
                   <i className="fas fa-rocket"></i>
-                  Generate Business Idea
+                  Generate Business Analysis
                 </>
               )}
             </button>
@@ -373,8 +422,6 @@ export default function KomposeGenerate() {
           {/* Typing indicator */}
           {isGenerating && <TypingIndicator />}
           
-          {/* Invisible element for scrolling */}
-          <div ref={messagesEndRef} />
         </div>
       </div>
     </main>

@@ -135,7 +135,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             list: Results from all tasks
         """
         initial_user_input = ""
-        if user_prompt :
+        if user_prompt:
             initial_user_input = user_prompt
         else:
             # Get business idea from database based on block_id
@@ -155,401 +155,399 @@ class KomposeBlockHandler(BaseBlockHandler):
             verbose=True,
             llm=self.llm
         )
+        
         # Define all 18 tasks
         tasks = []
         
-        # Task 1: Initial Business Idea Generation
+        # Task 1: Initial Classification Matrix
         tasks.append(Task(
             description=f"""
-            Given an business idea {initial_user_input} based on current market trends and opportunities.
-            Consider the following factors:
-            - Emerging market needs
-            - Technological advancements
-            - Potential for disruption
-            - Scalability
-            - Target audience
-    
-            The idea should be specific, feasible, and innovative.
+            Create an Initial Classification Matrix for the business idea: "{initial_user_input}".
             
             FORMAT YOUR RESPONSE AS JSON:
             {{
-                "idea_name": "Name of the business idea",
-                "tagline": "Brief 1-line description",
-                "summary": "3-4 sentence explanation of the business concept",
-                "innovation_factor": "What makes this idea innovative",
-                "target_market": "Primary target audience",
-                "potential_impact": "Potential impact of this business"
+                "matrix_data": {{
+                    "Category": ["Industry", "Target Market", "Core Value", "Geography"],
+                    "Primary": ["Primary value for Industry", "Primary value for Target Market", "Primary value for Core Value", "Primary value for Geography"],
+                    "Secondary": ["Secondary value for Industry", "Secondary value for Target Market", "Secondary value for Core Value", "Secondary value for Geography"],
+                    "Tertiary": ["Tertiary value for Industry", "Tertiary value for Target Market", "Tertiary value for Core Value", "Tertiary value for Geography"]
+                }}
             }}
+            
+            Be specific and realistic with your classifications based on the business idea. For example, if it's like "Zepto for Fashion", the Industry might be "Retail" (Primary), "Fashion" (Secondary), "Quick Commerce" (Tertiary).
             """,
             agent=kompose_agent,
-            expected_output="JSON with business idea details"
+            expected_output="JSON with Initial Classification Matrix"
         ))
         
-        # Task 2: Market Analysis
+        # Task 2: Similar Business Analysis Matrix
         tasks.append(Task(
             description=f"""
-            Perform a comprehensive market analysis for the business idea.
+            Create a Similar Business Analysis Matrix for the business idea: "{initial_user_input}".
             
             FORMAT YOUR RESPONSE AS JSON:
             {{
-                "market_size": "Size of the total addressable market in dollars",
-                "market_growth": "Annual growth rate percentage",
-                "key_trends": ["List of 3-5 key market trends"],
-                "major_players": ["List of 3-5 existing companies in this space"],
-                "market_gaps": ["List of 3-4 unmet needs or gaps in the market"],
-                "market_challenges": ["List of 3-4 challenges in the market"]
+                "matrix_data": {{
+                    "Company": ["Company 1", "Company 2", "Company 3"],
+                    "Business Model": ["Business Model 1", "Business Model 2", "Business Model 3"],
+                    "Key Metrics": ["Metrics 1", "Metrics 2", "Metrics 3"],
+                    "Success Factors": ["Factors 1", "Factors 2", "Factors 3"],
+                    "Market Position": ["Position 1", "Position 2", "Position 3"]
+                }}
             }}
+            
+            Provide real-world examples of similar businesses with accurate metrics (revenue, growth, market share), success factors (bullet points with • symbol), and market positions.
             """,
             agent=kompose_agent,
-            expected_output="JSON with market analysis"
+            expected_output="JSON with Similar Business Analysis Matrix"
         ))
         
-        # Task 3: Customer Segmentation
+        # Task 3: Market Opportunity Grid
         tasks.append(Task(
             description=f"""
-            Define detailed customer segments for the business idea.
+            Create a Market Opportunity Grid for the business idea: "{initial_user_input}".
             
             FORMAT YOUR RESPONSE AS JSON:
             {{
-                "primary_segment": {{
-                    "name": "Name of primary customer segment",
-                    "demographics": "Demographics of this segment",
-                    "psychographics": "Psychographic profile",
-                    "pain_points": ["List of 3-4 key pain points"],
-                    "needs": ["List of 3-4 key needs"]
-                }},
-                "secondary_segment": {{
-                    "name": "Name of secondary customer segment",
-                    "demographics": "Demographics of this segment",
-                    "psychographics": "Psychographic profile",
-                    "pain_points": ["List of 3-4 key pain points"],
-                    "needs": ["List of 3-4 key needs"]
-                }},
-                "segment_growth_potential": "Analysis of growth potential by segment"
+                "matrix_data": {{
+                    "Dimension": ["Dimension 1", "Dimension 2", "Dimension 3"],
+                    "Current State": ["State 1", "State 2", "State 3"],
+                    "Growth Potential": ["Potential 1", "Potential 2", "Potential 3"],
+                    "Competition Level": ["Level 1", "Level 2", "Level 3"],
+                    "Opportunity Score": ["Score 1", "Score 2", "Score 3"]
+                }}
             }}
+            
+            For Growth Potential, use emoji indicators like ⬆️ (High), ➡️ (Medium), ⬇️ (Low). For Competition Level, use 🔴 (High), 🟡 (Medium), 🟢 (Low). For Opportunity Score, use a scale of 1-10.
             """,
             agent=kompose_agent,
-            expected_output="JSON with customer segmentation"
+            expected_output="JSON with Market Opportunity Grid"
         ))
         
-        # Task 4: Value Proposition
+        # Task 4: Market Trends Heat Map
         tasks.append(Task(
             description=f"""
-            Develop a compelling value proposition for the business idea.
+            Create a Market Trends Heat Map for the business idea: "{initial_user_input}".
             
             FORMAT YOUR RESPONSE AS JSON:
             {{
-                "core_value_proposition": "The main value proposition in one sentence",
-                "key_benefits": ["List of 4-5 key benefits for customers"],
-                "differentiators": ["List of 3-4 key differentiators from competitors"],
-                "value_proposition_statement": "A comprehensive 3-4 sentence value proposition",
-                "problem_solution_fit": "How the solution addresses customer problems"
+                "matrix_data": {{
+                    "Trend Category": ["Category 1", "Category 1", "Category 1", "Category 2", "Category 2", "Category 2", "Category 3", "Category 3", "Category 3"],
+                    "Trend": ["Trend 1", "Trend 2", "Trend 3", "Trend 4", "Trend 5", "Trend 6", "Trend 7", "Trend 8", "Trend 9"],
+                    "Impact": ["Impact 1", "Impact 2", "Impact 3", "Impact 4", "Impact 5", "Impact 6", "Impact 7", "Impact 8", "Impact 9"],
+                    "Adoption Rate": ["Rate 1", "Rate 2", "Rate 3", "Rate 4", "Rate 5", "Rate 6", "Rate 7", "Rate 8", "Rate 9"],
+                    "Relevance": ["Relevance 1", "Relevance 2", "Relevance 3", "Relevance 4", "Relevance 5", "Relevance 6", "Relevance 7", "Relevance 8", "Relevance 9"]
+                }}
             }}
+            
+            Group trends by categories like "Consumer Behavior", "Technology", "Delivery", etc. For Impact, use emoji indicators like 🔥 (High), 🔶 (Medium), 🟦 (Low). For Adoption Rate, use percentages. For Relevance, use terms like "Critical", "Important", "Standard", "Differentiator", "Innovative".
             """,
             agent=kompose_agent,
-            expected_output="JSON with value proposition"
+            expected_output="JSON with Market Trends Heat Map"
         ))
         
-        # Task 5: Business Model
+        # Task 5: Competition Analysis Matrix
         tasks.append(Task(
             description=f"""
-            Define the business model for the idea.
+            Create a Competition Analysis Matrix for the business idea: "{initial_user_input}".
             
             FORMAT YOUR RESPONSE AS JSON:
             {{
-                "revenue_model": "Primary method of generating revenue",
-                "pricing_strategy": "Pricing approach and rationale",
-                "revenue_streams": ["List of 3-4 potential revenue streams"],
-                "cost_structure": {{
-                    "fixed_costs": ["List of main fixed costs"],
-                    "variable_costs": ["List of main variable costs"]
-                }},
-                "key_metrics": ["List of 4-5 key performance indicators"],
-                "break_even_estimate": "Estimated time to break even"
+                "matrix_data": {{
+                    "Parameter": ["Market Players", "Entry Barriers", "Market Share", "Growth Rate", "Differentiation"],
+                    "Direct Competition": ["Few (3-5)", "Medium", "Fragmented", "High (30%+)", "Low"],
+                    "Indirect Competition": ["Many (20+)", "High", "Consolidated", "Moderate (15%)", "High"],
+                    "Your Position": ["New Entrant", "-", "-", "-", "High"]
+                }}
             }}
+            
+            Analyze the competitive landscape realistically, showing direct competition (similar business models), indirect competition (alternative solutions), and your potential market position.
             """,
             agent=kompose_agent,
-            expected_output="JSON with business model"
+            expected_output="JSON with Competition Analysis Matrix"
         ))
         
-        # Task 6: Competitor Analysis
+        # Task 6: Opportunity Assessment Matrix
         tasks.append(Task(
             description=f"""
-            Analyze the competitors in this market space.
+            Create an Opportunity Assessment Matrix for the business idea: "{initial_user_input}".
             
             FORMAT YOUR RESPONSE AS JSON:
             {{
-                "direct_competitors": [
-                    {{
-                        "name": "Competitor 1 name",
-                        "strengths": ["List of 2-3 strengths"],
-                        "weaknesses": ["List of 2-3 weaknesses"],
-                        "market_share": "Estimated market share percentage"
-                    }},
-                    {{
-                        "name": "Competitor 2 name",
-                        "strengths": ["List of 2-3 strengths"],
-                        "weaknesses": ["List of 2-3 weaknesses"],
-                        "market_share": "Estimated market share percentage"
-                    }}
-                ],
-                "indirect_competitors": ["List of 3-4 indirect competitors"],
-                "competitive_advantages": ["List of 3-4 potential advantages for your business"],
-                "barriers_to_entry": ["List of 3-4 barriers to market entry"]
+                "matrix_data": {{
+                    "Factor": ["Market Gap", "Technology", "Geography", "Customer Need", "Competition"],
+                    "Status": ["Underserved", "Emerging", "Limited Coverage", "Strong", "Low"],
+                    "Opportunity": ["High", "High", "High", "High", "High"],
+                    "Risk Level": ["Medium", "Medium", "Low", "Low", "Medium"]
+                }}
             }}
+            
+            Assess key opportunity factors with relevant status descriptions, opportunity levels (High, Medium, Low), and risk levels (High, Medium, Low).
             """,
             agent=kompose_agent,
-            expected_output="JSON with competitor analysis"
+            expected_output="JSON with Opportunity Assessment Matrix"
         ))
         
-        # Task 7: SWOT Analysis
+        # Task 7: Key Success Factors Matrix
         tasks.append(Task(
             description=f"""
-            Perform a SWOT analysis for the business idea.
+            Create a Key Success Factors Matrix for the business idea: "{initial_user_input}".
             
             FORMAT YOUR RESPONSE AS JSON:
             {{
-                "strengths": ["List of 4-5 internal strengths"],
-                "weaknesses": ["List of 4-5 internal weaknesses"],
-                "opportunities": ["List of 4-5 external opportunities"],
-                "threats": ["List of 4-5 external threats"],
-                "key_insights": "Brief analysis of the most critical SWOT elements"
+                "matrix_data": {{
+                    "Area": ["Technology", "Operations", "Customer Experience"],
+                    "Requirements": ["Requirements for Technology", "Requirements for Operations", "Requirements for Customer Experience"],
+                    "Current Market": ["Current Market for Technology", "Current Market for Operations", "Current Market for Customer Experience"],
+                    "Your Potential": ["Your Potential for Technology", "Your Potential for Operations", "Your Potential for Customer Experience"]
+                }}
             }}
+            
+            For Requirements, list 3 key requirements for each area, formatted as bullet points with line breaks (e.g., "• Mobile App<br>• AI/ML<br>• Real-time Tracking"). For Current Market and Your Potential, provide concise assessments like "Limited Solutions", "Competitive Edge", etc.
             """,
             agent=kompose_agent,
-            expected_output="JSON with SWOT analysis"
+            expected_output="JSON with Key Success Factors Matrix"
         ))
         
-        # Task 8: Marketing Strategy
+        # Task 8: Growth Drivers Matrix
         tasks.append(Task(
             description=f"""
-            Develop a marketing strategy for the business idea.
+            Create a Growth Drivers Matrix for the business idea: "{initial_user_input}".
             
             FORMAT YOUR RESPONSE AS JSON:
             {{
-                "brand_positioning": "How the brand should be positioned",
-                "marketing_channels": ["List of 4-5 key marketing channels"],
-                "content_strategy": "Approach to content creation and distribution",
-                "customer_acquisition": "Strategy for acquiring customers",
-                "growth_tactics": ["List of 3-4 specific growth tactics"],
-                "key_messaging": ["List of 3-4 key messages for marketing"]
+                "matrix_data": {{
+                    "Driver Type": ["Driver 1", "Driver 2", "Driver 3", "Driver 4", "Driver 5"],
+                    "Impact": ["High", "High", "High", "Medium", "Medium"],
+                    "Trend": ["⬆️ Rising", "⬆️ Rising", "⬆️ Rising", "⬆️ Rising", "⬆️ Rising"],
+                    "Time Horizon": ["Short Term", "Immediate", "Short Term", "Medium Term", "Long Term"]
+                }}
             }}
+            
+            Identify key growth drivers relevant to the business, their impact (High, Medium, Low), trend direction (⬆️ Rising, ➡️ Stable, ⬇️ Declining), and time horizon for realization (Immediate, Short Term, Medium Term, Long Term).
             """,
             agent=kompose_agent,
-            expected_output="JSON with marketing strategy"
+            expected_output="JSON with Growth Drivers Matrix"
         ))
         
-        # Task 9: Product Development Roadmap
+        # Task 9: Investment Landscape Matrix
         tasks.append(Task(
             description=f"""
-            Create a product development roadmap for the business idea.
+            Create an Investment Landscape Matrix for the business idea: "{initial_user_input}".
             
             FORMAT YOUR RESPONSE AS JSON:
             {{
-                "mvp_features": ["List of 4-5 core features for MVP"],
-                "development_phases": [
-                    {{
-                        "phase": "Phase 1 (MVP)",
-                        "timeline": "Estimated timeline",
-                        "key_milestones": ["List of 3-4 key milestones"]
-                    }},
-                    {{
-                        "phase": "Phase 2",
-                        "timeline": "Estimated timeline",
-                        "key_milestones": ["List of 3-4 key milestones"]
-                    }},
-                    {{
-                        "phase": "Phase 3",
-                        "timeline": "Estimated timeline",
-                        "key_milestones": ["List of 3-4 key milestones"]
-                    }}
-                ],
-                "technology_stack": ["List of potential technologies to use"],
-                "development_challenges": ["List of 3-4 potential challenges"]
+                "matrix_data": {{
+                    "Investor Type": ["VCs", "Strategic Investors", "Private Equity"],
+                    "Recent Investments": ["$2.1B (Last 12 months)", "$3.2B (Last 12 months)", "$1.8B (Last 12 months)"],
+                    "Average Deal Size": ["$25M - $100M", "$50M - $250M", "$100M+"],
+                    "Focus Areas": ["Focus Areas for VCs", "Focus Areas for Strategic Investors", "Focus Areas for Private Equity"],
+                    "Trends": ["⬆️ Increasing", "⬆️ Increasing", "➡️ Stable"]
+                }}
             }}
+            
+            For Focus Areas, list 3 key focus areas for each investor type as bullet points with line breaks (e.g., "• Tech Integration<br>• Supply Chain<br>• Customer Analytics"). For Trends, use emoji indicators (⬆️ Increasing, ➡️ Stable, ⬇️ Declining).
             """,
             agent=kompose_agent,
-            expected_output="JSON with product development roadmap"
+            expected_output="JSON with Investment Landscape Matrix"
         ))
         
-        # Task 10: Financial Projections (Fixed)
+        # Task 10: Technology Stack Requirements
         tasks.append(Task(
             description=f"""
-            Create financial projections for the business idea.
+            Create a Technology Stack Requirements matrix for the business idea: "{initial_user_input}".
             
             FORMAT YOUR RESPONSE AS JSON:
             {{
-                "startup_costs": {{
-                    "total": "Estimated total startup costs",
-                    "breakdown": ["List of 4-5 major startup cost categories with amounts"]
-                }},
-                "monthly_expenses": {{
-                    "total": "Estimated monthly expenses",
-                    "breakdown": ["List of 4-5 major expense categories with amounts"]
-                }},
-                "revenue_projections": {{
-                    "year_1": "Projected revenue for year 1",
-                    "year_2": "Projected revenue for year 2",
-                    "year_3": "Projected revenue for year 3"
-                }},
-                "profitability_timeline": "Estimated timeline to profitability",
-                "funding_requirements": "Estimated funding needed"
+                "matrix_data": {{
+                    "Component": ["E-commerce Platform", "Inventory Management", "Delivery Management", "AR/VR Try-on", "Analytics & AI"],
+                    "Current Market Solutions": ["Multiple Solutions Available", "Limited Quick-Commerce Solutions", "Emerging Solutions", "Few Specialized Solutions", "Custom Development Needed"],
+                    "Gap Analysis": ["Medium Gap", "High Gap", "High Gap", "Very High Gap", "High Gap"],
+                    "Implementation Complexity": ["Medium", "High", "High", "Very High", "High"],
+                    "Cost Range": ["$$$$", "$$$", "$$$", "$$$$$", "$$$$"]
+                }}
             }}
-            """,
-            agent=kompose_agent,
-            expected_output="JSON with financial projections"
-        ))
-
-        # Task 11: Team Structure
-        tasks.append(Task(
-            description=f"""
-            Define the ideal team structure for the business.
             
-            FORMAT YOUR RESPONSE AS JSON:
-            {{
-                "founding_team": ["List of 2-4 key founding roles needed"],
-                "initial_hires": ["List of 3-5 first employees to hire"],
-                "skills_required": ["List of 5-7 essential skills needed"],
-                "organizational_structure": "Brief description of org structure",
-                "hiring_timeline": "Timeline for building the team",
-                "culture_values": ["List of 3-5 key cultural values for the company"]
-            }}
+            Identify the key technology components needed for the business, evaluate available market solutions, gap analysis (Low Gap, Medium Gap, High Gap, Very High Gap), implementation complexity, and cost range ($ to $$$$$).
             """,
             agent=kompose_agent,
-            expected_output="JSON with team structure"
+            expected_output="JSON with Technology Stack Requirements"
         ))
         
-        # Task 12: Go-to-Market Strategy
+        # Task 11: Regulatory Environment Matrix
         tasks.append(Task(
             description=f"""
-            Develop a go-to-market strategy for the business idea.
+            Create a Regulatory Environment Matrix for the business idea: "{initial_user_input}".
             
             FORMAT YOUR RESPONSE AS JSON:
             {{
-                "launch_strategy": "Overall approach to market launch",
-                "target_geography": "Initial geographic market focus",
-                "launch_timeline": "Timeline for market entry",
-                "key_launch_activities": ["List of 4-5 key launch activities"],
-                "success_metrics": ["List of 3-4 key metrics to track success"],
-                "partnerships_needed": ["List of 3-4 potential partnerships"]
+                "matrix_data": {{
+                    "Aspect": ["E-commerce", "Quick Commerce", "Labor Laws", "Data Privacy", "Consumer Protection"],
+                    "Current Regulations": ["Standard Framework", "Evolving Rules", "Gig Economy Focus", "GDPR/Similar", "Standard Framework"],
+                    "Future Trends": ["Increasing Oversight", "New Regulations Expected", "Stricter Controls", "Increasing Strictness", "Enhanced Protection"],
+                    "Impact Level": ["Medium", "High", "High", "High", "Medium"],
+                    "Compliance Cost": ["$$", "$$$", "$$$", "$$$", "$$"]
+                }}
             }}
+            
+            Analyze the regulatory landscape relevant to the business idea, current and future regulatory trends, potential impact levels (Low, Medium, High), and compliance costs ($ to $$$$$).
             """,
             agent=kompose_agent,
-            expected_output="JSON with go-to-market strategy"
+            expected_output="JSON with Regulatory Environment Matrix"
         ))
         
-        # Task 13: Risk Assessment
+        # Task 12: Supply Chain Analysis
         tasks.append(Task(
             description=f"""
-            Conduct a risk assessment for the business idea.
+            Create a Supply Chain Analysis for the business idea: "{initial_user_input}".
             
             FORMAT YOUR RESPONSE AS JSON:
             {{
-                "market_risks": ["List of 3-4 key market risks"],
-                "operational_risks": ["List of 3-4 key operational risks"],
-                "financial_risks": ["List of 3-4 key financial risks"],
-                "technology_risks": ["List of 3-4 key technology risks"],
-                "regulatory_risks": ["List of 2-3 key regulatory risks"],
-                "mitigation_strategies": ["List of 4-5 risk mitigation strategies"]
+                "matrix_data": {{
+                    "Component": ["Sourcing", "Storage", "Last Mile", "Returns"],
+                    "Current State": ["Traditional", "Centralized", "Standard", "Complex"],
+                    "Pain Points": ["Long Lead Times", "High Costs", "Slow Delivery", "High Cost"],
+                    "Innovation Opportunities": ["AI Prediction", "Dark Stores", "Micro-Fulfillment", "Smart Solutions"],
+                    "Cost Impact": ["High", "Medium", "High", "High"]
+                }}
             }}
+            
+            Analyze the supply chain components specific to the business idea, current state of each component, key pain points, opportunities for innovation, and cost impact (Low, Medium, High).
             """,
             agent=kompose_agent,
-            expected_output="JSON with risk assessment"
+            expected_output="JSON with Supply Chain Analysis"
         ))
         
-        # Task 14: Technology Requirements
+        # Task 13: Customer Experience Mapping
         tasks.append(Task(
             description=f"""
-            Define the technology requirements for the business.
+            Create a Customer Experience Mapping for the business idea: "{initial_user_input}".
             
             FORMAT YOUR RESPONSE AS JSON:
             {{
-                "core_technologies": ["List of 3-5 core technologies needed"],
-                "infrastructure_needs": ["List of 3-4 infrastructure requirements"],
-                "technical_capabilities": ["List of 4-5 technical capabilities needed"],
-                "build_vs_buy": "Approach to building vs buying technology",
-                "technology_roadmap": "Brief roadmap for technology development",
-                "maintenance_considerations": "Ongoing maintenance considerations"
+                "matrix_data": {{
+                    "Touchpoint": ["Discovery", "Size/Fit", "Purchase", "Delivery", "Returns"],
+                    "Current Market Standard": ["Social Media/Apps", "Basic Tools", "Standard E-commerce", "Same Day/Next Day", "Traditional Process"],
+                    "Pain Points": ["Fragmented", "Inaccurate", "Slow", "Too Slow", "Complex"],
+                    "Innovation Potential": ["High", "Very High", "High", "Very High", "High"],
+                    "Priority": ["Critical", "Critical", "High", "Critical", "High"]
+                }}
             }}
+            
+            Map the customer journey touchpoints relevant to the business idea, current market standards, pain points, potential for innovation (Low, Medium, High, Very High), and priority level (Low, Medium, High, Critical).
             """,
             agent=kompose_agent,
-            expected_output="JSON with technology requirements"
+            expected_output="JSON with Customer Experience Mapping"
         ))
         
-        # Task 15: Scalability Plan
+        # Task 14: Resource Requirements Matrix
         tasks.append(Task(
             description=f"""
-            Create a scalability plan for the business.
+            Create a Resource Requirements Matrix for the business idea: "{initial_user_input}".
             
             FORMAT YOUR RESPONSE AS JSON:
             {{
-                "growth_drivers": ["List of 3-4 key growth drivers"],
-                "scalability_challenges": ["List of 3-4 challenges to scaling"],
-                "expansion_strategy": "Overall approach to scaling the business",
-                "market_expansion": ["List of 3-4 potential new markets"],
-                "operational_scaling": "How operations will scale with growth",
-                "technology_scaling": "How technology will scale with growth"
+                "matrix_data": {{
+                    "Resource Type": ["Technology Team", "Operations Team", "Warehouse Staff", "Delivery Partners", "Management Team"],
+                    "Initial Need": ["15-20", "25-30", "30-40", "50-100", "5-7"],
+                    "Scale-up Need": ["50-75", "100-150", "150-200", "500-1000", "15-20"],
+                    "Availability": ["Limited", "Available", "Available", "Available", "Limited"],
+                    "Cost Level": ["High", "Medium", "Low", "Medium", "High"]
+                }}
             }}
+            
+            Define the human and operational resources needed for the business, both initially and for scaling up, resource availability (Limited, Available, Abundant), and cost levels (Low, Medium, High).
             """,
             agent=kompose_agent,
-            expected_output="JSON with scalability plan"
+            expected_output="JSON with Resource Requirements Matrix"
         ))
         
-        # Task 16: Legal and Regulatory Considerations
+        # Task 15: Risk Assessment Matrix
         tasks.append(Task(
             description=f"""
-            Identify legal and regulatory considerations for the business.
+            Create a Risk Assessment Matrix for the business idea: "{initial_user_input}".
             
             FORMAT YOUR RESPONSE AS JSON:
             {{
-                "business_structure": "Recommended legal structure",
-                "regulations": ["List of 3-5 key regulations to consider"],
-                "compliance_requirements": ["List of 3-4 compliance requirements"],
-                "intellectual_property": "IP protection strategy",
-                "contracts_needed": ["List of 3-4 essential contracts"],
-                "legal_risks": ["List of 2-3 key legal risks"]
+                "matrix_data": {{
+                    "Risk Category": ["Technology Risk", "Market Risk", "Operational Risk", "Financial Risk", "Regulatory Risk"],
+                    "Probability": ["High", "Medium", "High", "Medium", "Low"],
+                    "Impact": ["High", "High", "High", "High", "High"],
+                    "Mitigation Availability": ["Available", "Partial", "Available", "Available", "Available"],
+                    "Priority": ["Critical", "High", "Critical", "High", "Medium"]
+                }}
             }}
+            
+            Identify key risk categories, assess probability (Low, Medium, High), potential impact (Low, Medium, High), availability of mitigation measures (Available, Partial, Limited, None), and priority level (Low, Medium, High, Critical).
             """,
             agent=kompose_agent,
-            expected_output="JSON with legal and regulatory considerations"
+            expected_output="JSON with Risk Assessment Matrix"
         ))
         
-        # Task 17: Key Partnerships
+        # Task 16: Unit Economics Baseline
         tasks.append(Task(
             description=f"""
-            Identify key partnerships for the business.
+            Create a Unit Economics Baseline for the business idea: "{initial_user_input}".
             
             FORMAT YOUR RESPONSE AS JSON:
             {{
-                "strategic_partners": ["List of 3-4 potential strategic partners"],
-                "technology_partners": ["List of 2-3 potential technology partners"],
-                "distribution_partners": ["List of 2-3 potential distribution partners"],
-                "service_providers": ["List of 3-4 essential service providers"],
-                "partnership_benefits": ["List of 3-4 key benefits from partnerships"],
-                "partnership_approach": "Strategy for establishing partnerships"
+                "matrix_data": {{
+                    "Metric": ["CAC", "LTV", "AOV", "Gross Margin", "Delivery Cost"],
+                    "Industry Average": ["$25-30", "$150-200", "$45-50", "45-50%", "$8-10"],
+                    "Best in Class": ["$15-20", "$300-350", "$75-80", "60-65%", "$5-6"],
+                    "Your Potential": ["$20-25", "$250-300", "$60-65", "55-60%", "$6-7"],
+                    "Notes": ["Optimization Possible", "Higher with Quick Service", "Premium for Speed", "Efficiency Dependent", "Scale Dependent"]
+                }}
             }}
+            
+            Analyze key unit economics metrics: Customer Acquisition Cost (CAC), Lifetime Value (LTV), Average Order Value (AOV), Gross Margin, Delivery Cost, and other metrics relevant to the business. Compare industry averages, best-in-class benchmarks, and potential for your business.
             """,
             agent=kompose_agent,
-            expected_output="JSON with key partnerships"
+            expected_output="JSON with Unit Economics Baseline"
         ))
         
-        # Task 18: Implementation Action Plan
+        # Task 17: Market Size Segmentation
         tasks.append(Task(
             description=f"""
-            Create an implementation action plan for the first 12 months.
+            Create a Market Size Segmentation for the business idea: "{initial_user_input}".
             
             FORMAT YOUR RESPONSE AS JSON:
             {{
-                "months_1_3": ["List of 5-6 key actions for months 1-3"],
-                "months_4_6": ["List of 5-6 key actions for months 4-6"],
-                "months_7_9": ["List of 5-6 key actions for months 7-9"],
-                "months_10_12": ["List of 5-6 key actions for months 10-12"],
-                "critical_milestones": ["List of 4-5 critical milestones"],
-                "resource_allocation": "Key resources needed and how to allocate them"
+                "matrix_data": {{
+                    "Segment": ["Segment 1", "Segment 2", "Segment 3", "Combined Opportunity"],
+                    "TAM": ["$142B", "$25B", "$62B", "$229B"],
+                    "SAM": ["$42B", "$8B", "$18B", "$68B"],
+                    "SOM": ["$2.1B", "$400M", "$900M", "$3.4B"],
+                    "Growth Rate": ["21%", "32%", "27%", "26%"]
+                }}
             }}
+            
+            Identify relevant market segments for the business idea, calculate Total Addressable Market (TAM), Serviceable Addressable Market (SAM), Serviceable Obtainable Market (SOM), and growth rates for each segment. Include a "Combined Opportunity" row with totals.
             """,
             agent=kompose_agent,
-            expected_output="JSON with implementation action plan"
+            expected_output="JSON with Market Size Segmentation"
+        ))
+        
+        # Task 18: Competitive Moat Analysis
+        tasks.append(Task(
+            description=f"""
+            Create a Competitive Moat Analysis for the business idea: "{initial_user_input}".
+            
+            FORMAT YOUR RESPONSE AS JSON:
+            {{
+                "matrix_data": {{
+                    "Moat Type": ["Network Effects", "Brand Value", "Technology", "Data Advantage", "Scale Economics"],
+                    "Current Market": ["Limited", "Limited", "Limited", "Limited", "Limited"],
+                    "Development Potential": ["High", "High", "Very High", "Very High", "High"],
+                    "Time to Build": ["18-24 months", "12-18 months", "12-15 months", "18-24 months", "24-36 months"],
+                    "Investment Need": ["$$$$", "$$$", "$$$$$", "$$$$", "$$$$$"]
+                }}
+            }}
+            
+            Analyze potential competitive advantages (moats), evaluate the current market state for each moat type, development potential (Low, Medium, High, Very High), estimated time to build the moat, and required investment level ($ to $$$$$).
+            """,
+            agent=kompose_agent,
+            expected_output="JSON with Competitive Moat Analysis"
         ))
         
         # Create the crew with all tasks
@@ -614,24 +612,24 @@ class KomposeBlockHandler(BaseBlockHandler):
     def _get_task_title(self, task_number):
         """Get title for a task based on its number"""
         task_titles = {
-            1: "Business Idea Generation",
-            2: "Market Analysis",
-            3: "Customer Segmentation",
-            4: "Value Proposition",
-            5: "Business Model",
-            6: "Competitor Analysis",
-            7: "SWOT Analysis",
-            8: "Marketing Strategy",
-            9: "Product Development Roadmap",
-            10: "Financial Projections",
-            11: "Team Structure",
-            12: "Go-to-Market Strategy",
-            13: "Risk Assessment",
-            14: "Technology Requirements",
-            15: "Scalability Plan",
-            16: "Legal and Regulatory Considerations",
-            17: "Key Partnerships",
-            18: "Implementation Action Plan"
+            1: "Initial Classification Matrix",
+            2: "Similar Business Analysis Matrix",
+            3: "Market Opportunity Grid",
+            4: "Market Trends Heat Map",
+            5: "Competition Analysis Matrix",
+            6: "Opportunity Assessment Matrix",
+            7: "Key Success Factors Matrix",
+            8: "Growth Drivers Matrix",
+            9: "Investment Landscape Matrix",
+            10: "Technology Stack Requirements",
+            11: "Regulatory Environment Matrix",
+            12: "Supply Chain Analysis",
+            13: "Customer Experience Mapping",
+            14: "Resource Requirements Matrix",
+            15: "Risk Assessment Matrix",
+            16: "Unit Economics Baseline",
+            17: "Market Size Segmentation",
+            18: "Competitive Moat Analysis"
         }
         
         return task_titles.get(task_number, f"Task {task_number}")

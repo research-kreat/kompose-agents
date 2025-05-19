@@ -5,15 +5,6 @@ import ConsoleLogs from './ConsoleLogs';
 export default function InfoPanel() {
   const { blockInfo } = useChatStore();
   
-  // Get the block type label
-  const getBlockTypeLabel = () => {
-    const typeLabels = {
-      kompose: 'Kompose Business Generator',
-    };
-    
-    return typeLabels[blockInfo.type] || 'Kompose Assistant';
-  };
-  
   return (
     <div className="bg-white border-l border-gray-200 h-full flex flex-col">
       <div className="p-6 border-b border-gray-200">
@@ -22,7 +13,7 @@ export default function InfoPanel() {
           <p className="text-sm text-gray-700">
             <strong>Type:</strong>{' '}
             <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">
-              {getBlockTypeLabel()}
+              Kompose Business Generator
             </span>
           </p>
           <p className="text-sm text-gray-700">

@@ -4,9 +4,8 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useChatStore } from '@/store/chatStore';
 import { api } from '@/lib/api';
-import { getBlockTypeInfo } from '@/lib/blockUtils';
 
-export default function BlockSidebar({ onBlockSelect, blockType = 'general' }) {
+export default function BlockSidebar({ onBlockSelect }) {
   const router = useRouter();
   const { 
     blocks, 
@@ -17,16 +16,13 @@ export default function BlockSidebar({ onBlockSelect, blockType = 'general' }) {
     userId
   } = useChatStore();
   
-  // Get block type info
-  const blockInfo = getBlockTypeInfo(blockType);
-  
   // Load blocks from API on component mount
   useEffect(() => {
     if (!userId) return;
     
     const fetchBlocks = async () => {
       try {
-        const data = await api.getBlocks({ userId, blockType, limit: 20 });
+        const data = await api.getBlocks({ userId, limit: 20 });
         setBlocks(data.blocks || []);
         addLog({
           type: 'info',
@@ -41,7 +37,7 @@ export default function BlockSidebar({ onBlockSelect, blockType = 'general' }) {
     };
     
     fetchBlocks();
-  }, [userId, blockType, setBlocks, addLog]);
+  }, [userId, setBlocks, addLog]);
   
   const handleDeleteBlock = async (e, blockId) => {
     e.stopPropagation(); // Prevent block selection
@@ -57,7 +53,7 @@ export default function BlockSidebar({ onBlockSelect, blockType = 'general' }) {
       
       // If we deleted the current block, go to blocks page
       if (blockId === currentBlockId) {
-        router.push(`/blocks?type=${blockType}`);
+        router.push(`/blocks`);
       }
     } catch (error) {
       addLog({
@@ -81,10 +77,10 @@ export default function BlockSidebar({ onBlockSelect, blockType = 'general' }) {
     <div className="h-full bg-white border-r border-gray-200 flex flex-col">
       <div className="p-6 border-b border-gray-200">
         <h3 className="text-lg font-medium text-gray-800 mb-2">
-          {blockInfo?.title || "Kompose"}
+          Kompose
         </h3>
         <p className="text-sm text-gray-600">
-          {blockInfo?.description || "Generate startup ideas and business plans"}
+          Generate startup ideas and business plans
         </p>
       </div>
       
@@ -98,44 +94,42 @@ export default function BlockSidebar({ onBlockSelect, blockType = 'general' }) {
         ) : (
           <AnimatePresence>
             <ul>
-              {blocks
-                .filter(block => blockType === 'all' || block.type === blockType)
-                .map(block => {
-                  const formattedDate = new Date(block.created_at).toLocaleString();
-                  const displayName = block.name || `${block.type.charAt(0).toUpperCase() + block.type.slice(1)} ${block.block_id.substring(0, 8)}`;
-                  
-                  return (
-                    <motion.li
-                      key={block.block_id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, x: -10 }}
-                      transition={{ duration: 0.3 }}
-                      className={`py-3 px-4 mb-2 rounded-lg cursor-pointer transition-all duration-300 ${
-                        currentBlockId === block.block_id 
-                          ? 'bg-blue-50 border-l-4 border-primary' 
-                          : 'bg-gray-100 hover:bg-gray-200'
-                      }`}
-                      onClick={() => handleBlockClick(block.block_id)}
-                    >
-                      <div className="block-content">
-                        <div className="text-gray-800 font-medium mb-1 truncate">
-                          {displayName}
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <div className="text-xs text-gray-600">{formattedDate}</div>
-                          <button
-                            className="text-red-500 hover:text-red-700 transition-colors duration-300"
-                            title="Delete Block"
-                            onClick={(e) => handleDeleteBlock(e, block.block_id)}
-                          >
-                            <i className="fas fa-trash-alt"></i>
-                          </button>
-                        </div>
+              {blocks.map(block => {
+                const formattedDate = new Date(block.created_at).toLocaleString();
+                const displayName = block.name || `Kompose ${block.block_id.substring(0, 8)}`;
+                
+                return (
+                  <motion.li
+                    key={block.block_id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.3 }}
+                    className={`py-3 px-4 mb-2 rounded-lg cursor-pointer transition-all duration-300 ${
+                      currentBlockId === block.block_id 
+                        ? 'bg-blue-50 border-l-4 border-primary' 
+                        : 'bg-gray-100 hover:bg-gray-200'
+                    }`}
+                    onClick={() => handleBlockClick(block.block_id)}
+                  >
+                    <div className="block-content">
+                      <div className="text-gray-800 font-medium mb-1 truncate">
+                        {displayName}
                       </div>
-                    </motion.li>
-                  );
-                })}
+                      <div className="flex justify-between items-center">
+                        <div className="text-xs text-gray-600">{formattedDate}</div>
+                        <button
+                          className="text-red-500 hover:text-red-700 transition-colors duration-300"
+                          title="Delete Block"
+                          onClick={(e) => handleDeleteBlock(e, block.block_id)}
+                        >
+                          <i className="fas fa-trash-alt"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </motion.li>
+                );
+              })}
             </ul>
           </AnimatePresence>
         )}

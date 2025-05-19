@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useParams } from 'next/navigation';
 import Header from '@/components/ui/Header';
 import BlockSidebar from '@/components/ui/BlockSidebar';
@@ -49,16 +49,13 @@ export default function BlockPage() {
 
   return (
     <main className="min-h-screen flex flex-col bg-gray-100">
-      <Header 
-        blockId={blockId}
-        blockType={blockInfo?.type || 'kompose'}
-      />
+      <Header blockId={blockId} />
       
       <div className="flex-1 flex h-[calc(100vh-72px)]">
         {/* Sidebar with blocks */}
         {showSidebar && (
           <div className="w-64 flex-shrink-0">
-            <BlockSidebar blockType="kompose" />
+            <BlockSidebar />
           </div>
         )}
         
@@ -84,7 +81,7 @@ export default function BlockPage() {
             
             <div className="flex-1 flex">
               <div className="flex-1">
-                <BlockChatInterface blockId={blockId} blockType={blockInfo?.type || 'kompose'} />
+                <BlockChatInterface blockId={blockId} />
               </div>
               
               {/* Info panel */}

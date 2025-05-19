@@ -20,7 +20,6 @@ export const useChatStore = create(
       blockInfo: {
         created: null,
         messageCount: 0,
-        type: 'kompose', 
         blockId: null,   // This will hold the backend blockId when created
       },
       
@@ -141,7 +140,6 @@ export const useChatStore = create(
         blockInfo: {
           created: null,
           messageCount: 0,
-          type: 'kompose',
           blockId: null,
         },
         logs: [
@@ -154,7 +152,7 @@ export const useChatStore = create(
       }),
       
       // Create a new block
-      createNewBlock: async (type = 'kompose', name = 'New Chat') => {
+      createNewBlock: async (name = 'New Kompose Block') => {
         try {
           const { resetStore, addBlock, setCurrentBlockId, setBlockInfo, addLog, userId } = get();
           
@@ -167,7 +165,6 @@ export const useChatStore = create(
           // First, create the block on the backend
           const response = await api.createBlock({
             userId: currentUserId,
-            blockType: type,
             name: name
           });
           
@@ -184,7 +181,6 @@ export const useChatStore = create(
             // Update block info
             setBlockInfo({
               created: backendBlock.created_at,
-              type: backendBlock.type,
               blockId: backendBlock.block_id,
               messageCount: 0
             });
@@ -194,7 +190,7 @@ export const useChatStore = create(
               messageHistory: [
                 {
                   role: 'system',
-                  content: `Welcome to your new ${type} chat!`,
+                  content: 'Welcome to your new Kompose chat!',
                   timestamp: new Date().toISOString()
                 }
               ]
@@ -223,7 +219,6 @@ export const useChatStore = create(
           const blockId = uuidv4();
           const newBlock = {
             block_id: blockId,
-            type: type,
             name: name,
             created_at: new Date().toISOString(),
             is_local: true // Mark this as a local block
@@ -243,7 +238,6 @@ export const useChatStore = create(
           // Update block info
           setBlockInfo({
             created: newBlock.created_at,
-            type: type,
             blockId: blockId,
             messageCount: 0,
             is_local: true

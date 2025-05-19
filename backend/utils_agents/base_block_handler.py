@@ -9,8 +9,7 @@ logger = logging.getLogger(__name__)
 
 class BaseBlockHandler(ABC):
     """
-    Base class for all block handlers with improved dynamic suggestions and conversation history usage
-    Adapted for the Kompose application
+    Base class for Kompose block handler with improved dynamic suggestions and conversation history usage
     """
     
     def __init__(self, db, block_id, user_id):
@@ -73,7 +72,7 @@ class BaseBlockHandler(ABC):
                 
         return False
     
-    def handle_greeting(self, user_input, block_type):
+    def handle_greeting(self, user_input):
         """Handle greeting with natural, concise responses using conversation history"""
         # Get conversation history to provide more contextual greetings
         history = self._get_conversation_history()
@@ -98,7 +97,6 @@ class BaseBlockHandler(ABC):
                 description=f"""
                 The user has sent a greeting: "{user_input}"
                 
-                Current Block Type: {block_type}
                 {title_context}
                 {abstract_context}
                 
@@ -163,9 +161,7 @@ class BaseBlockHandler(ABC):
         """Process user message based on current flow status"""
         # Check if the message is a greeting
         if self.is_greeting(user_message):
-            block_data = self.flow_collection.find_one({"block_id": self.block_id, "user_id": self.user_id})
-            block_type = block_data.get("block_type", "kompose")
-            return self.handle_greeting(user_message, block_type)
+            return self.handle_greeting(user_message)
         
         # Get conversation history and previous content
         history = self._get_conversation_history()

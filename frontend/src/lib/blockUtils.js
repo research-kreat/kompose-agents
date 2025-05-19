@@ -1,56 +1,24 @@
 // lib/blockUtils.js
 
 /**
- * Get welcome message based on block type
- * @param {string} blockType - Type of block
+ * Get welcome message for Kompose
  * @returns {string} - Welcome message
  */
-export const getWelcomeMessage = (blockType) => {
-  const messages = {
-    kompose: "Welcome to Kompose. I can help guide you through creative business development and innovation. How can I assist you today?"
+export const getWelcomeMessage = () => {
+  return "Welcome to Kompose. I can help guide you through creative business development and innovation. How can I assist you today?";
+};
+
+/**
+ * Get Kompose information
+ * @returns {Object} - Kompose information
+ */
+export const getKomposeInfo = () => {
+  return {
+    title: "Business Development",
+    description: "Generate startup ideas and business plans",
+    icon: "fa-lightbulb",
+    color: "text-primary"
   };
-  
-  return messages[blockType] || "Welcome to Kompose. How can I assist you today?";
-};
-
-/**
- * Get information about a block type
- * @param {string} blockType - Type of block
- * @returns {Object} - Block type information
- */
-export const getBlockTypeInfo = (blockType) => {
-  const blockTypes = {
-    kompose: {
-      title: "Business Development",
-      description: "Generate startup ideas and business plans",
-      icon: "fa-lightbulb",
-      color: "text-primary"
-    },
-    general: {
-      title: "Kompose Assistant",
-      description: "AI-powered creative framework",
-      icon: "fa-comment",
-      color: "text-primary"
-    }
-  };
-  
-  return blockTypes[blockType] || blockTypes.general;
-};
-
-/**
- * Map block types to their routes
- */
-export const blockTypeRoutes = {
-  kompose: '/kompose',
-};
-
-/**
- * Get the appropriate route for a block type
- * @param {string} blockType - Type of block
- * @returns {string} - Route for the block type
- */
-export const getRouteForBlockType = (blockType) => {
-  return blockTypeRoutes[blockType] || '/';
 };
 
 /**

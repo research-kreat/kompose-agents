@@ -102,13 +102,12 @@ export const api = {
    * Get blocks for a user
    * @param {Object} params - Parameters
    * @param {string} params.userId - User ID
-   * @param {string} [params.blockType] - Block type to filter by
    * @param {number} [params.limit] - Maximum number of blocks to return
    * @returns {Promise<Object>} - Response data with blocks
    */
-  getBlocks: async ({ userId, blockType = 'all', limit = 10 }) => {
+  getBlocks: async ({ userId, limit = 10 }) => {
     return api.fetchWithErrorHandling(
-      `/blocks?user_id=${encodeURIComponent(userId)}&type=${encodeURIComponent(blockType)}&limit=${limit}`
+      `/blocks?user_id=${encodeURIComponent(userId)}&limit=${limit}`
     );
   },
   
@@ -192,16 +191,15 @@ export const api = {
    * Create a new block
    * @param {Object} params - Parameters
    * @param {string} params.userId - User ID
-   * @param {string} [params.blockType] - Block type
    * @param {string} [params.name] - Block name
    * @returns {Promise<Object>} - Response data with new block
    */
-  createBlock: async ({ userId, blockType = 'kompose', name = null }) => {
+  createBlock: async ({ userId, name = null }) => {
     if (!userId) {
       throw new Error('User ID is required');
     }
     
-    const defaultName = name || `New ${blockType.charAt(0).toUpperCase() + blockType.slice(1)} Block`;
+    const defaultName = name || 'New Kompose Block';
     
     return api.fetchWithErrorHandling('/blocks/new', {
       method: 'POST',
@@ -210,7 +208,6 @@ export const api = {
       },
       body: JSON.stringify({
         user_id: userId,
-        type: blockType,
         name: defaultName
       })
     });

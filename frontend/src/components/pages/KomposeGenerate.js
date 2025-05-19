@@ -49,11 +49,10 @@ export default function KomposeGenerate() {
     ]);
     
     // Create a new block for this session
-    const blockId = createNewBlock('kompose', 'Kompose Business Generator');
+    const blockId = createNewBlock('Kompose One-Click Business Generator');
     
     // Set block info
     setBlockInfo({
-      type: 'kompose',
       created: new Date().toISOString(),
       blockId: blockId
     });
@@ -366,7 +365,6 @@ export default function KomposeGenerate() {
     <main className="min-h-screen flex flex-col bg-gray-100">
       <Header 
         blockId={currentBlockId}
-        blockType="kompose"
         handleNewChat={() => router.push('/kompose/generate')}
       />
       

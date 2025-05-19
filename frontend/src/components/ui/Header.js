@@ -2,13 +2,9 @@
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { getBlockTypeInfo } from '@/lib/blockUtils';
 import { useChatStore } from '@/store/chatStore';
 
-export default function Header({ 
-  blockId = null, 
-  blockType = 'kompose'
-}) {
+export default function Header({ blockId = null }) {
   const router = useRouter();
   const [creatingBlock, setCreatingBlock] = useState(false);
   
@@ -16,26 +12,13 @@ export default function Header({
   const createNewBlock = useChatStore(state => state.createNewBlock);
   const addLog = useChatStore(state => state.addLog);
   
-  // Get block info using the utility function
-  const blockInfo = getBlockTypeInfo(blockType);
-  
-  // Get page title based on type
-  const getPageTitle = () => {
-    return blockInfo ? blockInfo.title : 'Kompose';
-  };
-  
-  // Get icon based on page type
-  const getIcon = () => {
-    return blockInfo ? blockInfo.icon : 'fa-lightbulb';
-  };
-  
   // Handle creating a new block
   const handleNewChat = async () => {
     try {
       setCreatingBlock(true);
       
       // Create a new block
-      const newBlockId = await createNewBlock(blockType, `New ${getPageTitle()}`);
+      const newBlockId = await createNewBlock();
       
       // Add a slight delay to ensure the block is created properly before navigating
       setTimeout(() => {
@@ -48,7 +31,7 @@ export default function Header({
       
       addLog({
         type: 'success',
-        message: `Created new ${blockType} block`
+        message: `Created new Kompose block`
       });
     } catch (error) {
       console.error('Error creating new block:', error);
@@ -66,14 +49,14 @@ export default function Header({
     <header className="bg-white shadow-md py-4 px-6 flex justify-between items-center">
       <div className="flex items-center gap-3">
         <motion.i 
-          className={`fas ${getIcon()} text-2xl text-primary`}
+          className="fas fa-lightbulb text-2xl text-primary"
           initial={{ rotate: -30 }}
           animate={{ rotate: 0 }}
           transition={{ duration: 0.5 }}
         />
         <h1 className="text-xl font-semibold text-gray-800">Kompose</h1>
         <span className="text-sm text-gray-600 ml-2 border-l pl-3 border-gray-300">
-          {getPageTitle()}
+          Business Development
         </span>
       </div>
       
@@ -103,7 +86,7 @@ export default function Header({
                 </>
               ) : (
                 <>
-                  <i className="fas fa-plus"></i> New {getPageTitle()}
+                  <i className="fas fa-plus"></i> New Kompose
                 </>
               )}
             </button>

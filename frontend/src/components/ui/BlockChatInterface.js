@@ -7,9 +7,9 @@ import ChatInput from '@/components/ui/ChatInput';
 import TypingIndicator from '@/components/ui/TypingIndicator';
 import { useChatStore } from '@/store/chatStore';
 import { api } from '@/lib/api';
-import { getWelcomeMessage, getBlockTypeInfo } from '@/lib/blockUtils';
+import { getWelcomeMessage } from '@/lib/blockUtils';
 
-export default function BlockChatInterface({ blockId, blockType = 'kompose' }) {
+export default function BlockChatInterface({ blockId }) {
   const router = useRouter();
   const chatContainerRef = useRef(null);
   const [blockNotFound, setBlockNotFound] = useState(false);
@@ -61,7 +61,7 @@ export default function BlockChatInterface({ blockId, blockType = 'kompose' }) {
           setMessageHistory([
             {
               role: 'system',
-              content: getWelcomeMessage(blockType),
+              content: getWelcomeMessage(),
               timestamp: new Date().toISOString()
             }
           ]);
@@ -82,7 +82,6 @@ export default function BlockChatInterface({ blockId, blockType = 'kompose' }) {
         setBlockInfo({
           ...blockInfo,
           messageCount: data.messages.length,
-          type: data.block.type || blockType,
           blockId: data.block.block_id,
           created: data.block.created_at
         });
@@ -121,7 +120,7 @@ export default function BlockChatInterface({ blockId, blockType = 'kompose' }) {
         setMessageHistory([
           {
             role: 'system',
-            content: getWelcomeMessage(blockType),
+            content: getWelcomeMessage(),
             timestamp: new Date().toISOString()
           }
         ]);
@@ -135,7 +134,7 @@ export default function BlockChatInterface({ blockId, blockType = 'kompose' }) {
   // Load messages when component mounts
   useEffect(() => {
     fetchMessages();
-  }, [blockId, userId, blockType]);
+  }, [blockId, userId]);
 
   // Handle sending a message
   const handleSendMessage = async (content) => {
@@ -286,7 +285,6 @@ export default function BlockChatInterface({ blockId, blockType = 'kompose' }) {
     // Create export object
     const exportData = {
       block_id: blockId,
-      block_type: blockInfo.type || blockType,
       messages: messageHistory,
       exported_at: new Date().toISOString(),
     };
@@ -322,7 +320,7 @@ export default function BlockChatInterface({ blockId, blockType = 'kompose' }) {
       setCreatingBlock(true);
       
       // Create a new block - now an async operation
-      const newBlockId = await createNewBlock('kompose', 'New Kompose Chat');
+      const newBlockId = await createNewBlock();
       
       // Add a slight delay to ensure the block is created properly before navigating
       setTimeout(() => {
@@ -355,30 +353,12 @@ export default function BlockChatInterface({ blockId, blockType = 'kompose' }) {
     router.push('/blocks');
   };
 
-  // Get block icon based on type
-  const getBlockIcon = () => {
-    const icons = {
-      kompose: 'fa-lightbulb',
-    };
-    
-    return icons[blockType] || 'fa-comment';
-  };
-  
-  // Get block title based on type
-  const getBlockTitle = () => {
-    const titles = {
-      kompose: 'Business Development',
-    };
-    
-    return titles[blockType] || 'Kompose Assistant';
-  };
-
   return (
     <div className="flex flex-col h-full">
       <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-3">
-          <i className={`fas ${getBlockIcon()} text-xl text-primary`}></i>
-          <h2 className="text-lg font-medium text-gray-800">{getBlockTitle()}</h2>
+          <i className="fas fa-lightbulb text-xl text-primary"></i>
+          <h2 className="text-lg font-medium text-gray-800">Business Development</h2>
           {blockId && (
             <span className="text-xs bg-gray-100 px-2 py-1 rounded-full text-gray-600">
               {blockId.substring(0, 8)}...

@@ -53,7 +53,7 @@ export default function KomposeChat() {
       ]);
       
       // Create a new block
-      const newBlockId = createNewBlock('kompose', 'Kompose Chat');
+      const newBlockId = createNewBlock();
       setCurrentBlockId(newBlockId);
     }
     
@@ -210,10 +210,7 @@ export default function KomposeChat() {
         {/* Sidebar with blocks */}
         {showSidebar && (
           <div className="w-64 flex-shrink-0">
-            <BlockSidebar 
-              onBlockSelect={handleBlockSelect} 
-              blockType="kompose" 
-            />
+            <BlockSidebar onBlockSelect={handleBlockSelect} />
           </div>
         )}
         

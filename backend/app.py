@@ -9,7 +9,7 @@ import logging
 import json, re
 from helpers.global_helper import sanitize_response
 
-# Import our block handlers
+# Import our block handler
 from block_agents.kompose_block import KomposeBlockHandler
 
 # Configure logging
@@ -56,7 +56,6 @@ def analyze_message():
     flow_status = {
         "user_id": user_id,
         "block_id": block_id,
-        "block_type": "kompose",
         "initial_input": user_input,
         "flow_status": {},
         "created_at": datetime.utcnow(),
@@ -80,7 +79,6 @@ def analyze_message():
     blocks_collection.insert_one({
         "block_id": block_id,
         "user_id": user_id,
-        "type": "kompose",
         "name": "Kompose Chat",
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
@@ -108,7 +106,6 @@ def analyze_message():
     
     return jsonify({
         "block_id": block_id,
-        "block_type": "kompose",
         "response": response
     })
 
@@ -169,7 +166,6 @@ def analyze_block():
         
         return jsonify({
             "block_id": block_id,
-            "block_type": "kompose",
             "response": {
                 "suggestion": greeting_message
             }
@@ -192,7 +188,6 @@ def analyze_block():
         # Return a JSON-compatible response
         return jsonify({
             "block_id": block_id,
-            "block_type": "kompose",
             "response": response
         })
 
@@ -217,7 +212,6 @@ def stream_kompose_idea():
     flow_status = {
         "user_id": user_id,
         "block_id": block_id,
-        "block_type": "kompose",
         "initial_input": user_prompt,
         "flow_status": {},
         "created_at": datetime.utcnow(),
@@ -240,7 +234,6 @@ def stream_kompose_idea():
     blocks_collection.insert_one({
         "block_id": block_id,
         "user_id": user_id,
-        "type": "kompose",
         "name": "Kompose Business Idea",
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
@@ -264,7 +257,6 @@ def stream_kompose_idea():
         yield json.dumps({
             "type": "init",
             "block_id": block_id,
-            "block_type": "kompose",
             "message": "Starting Kompose business idea generation"
         }) + '\n'
         
@@ -438,7 +430,6 @@ def generate_kompose_idea():
     flow_status = {
         "user_id": user_id,
         "block_id": block_id,
-        "block_type": "kompose",
         "initial_input": user_prompt,
         "flow_status": {},
         "created_at": datetime.utcnow(),
@@ -462,7 +453,6 @@ def generate_kompose_idea():
     blocks_collection.insert_one({
         "block_id": block_id,
         "user_id": user_id,
-        "type": "kompose",
         "name": "Kompose Business Idea",
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
@@ -526,7 +516,6 @@ def generate_kompose_idea():
         
         return jsonify({
             "block_id": block_id,
-            "block_type": "kompose",
             "results": results,
             "success": True,
             "message": "Kompose business idea generated successfully"
@@ -559,7 +548,6 @@ def generate_kompose_idea():
         
         return jsonify({
             "block_id": block_id,
-            "block_type": "kompose",
             "error": str(e),
             "success": False,
             "message": "Error generating Kompose idea"
@@ -605,7 +593,6 @@ def get_blocks():
     Get blocks for a user
     """
     user_id = request.args.get('user_id')
-    block_type = request.args.get('type', 'all')
     limit = int(request.args.get('limit', 10))
     
     if not user_id:
@@ -613,10 +600,6 @@ def get_blocks():
     
     # Query to find blocks for the user
     query = {"user_id": user_id}
-    
-    # Add type filter if specified
-    if block_type != 'all':
-        query["type"] = block_type
     
     # Find blocks in MongoDB
     blocks = list(blocks_collection.find(
@@ -732,8 +715,7 @@ def create_block():
     """
     data = request.json
     user_id = data.get('user_id')
-    block_type = data.get('type', 'kompose')
-    name = data.get('name', f'New {block_type.capitalize()} Block')
+    name = data.get('name', 'New Kompose Block')
     
     if not user_id:
         return jsonify({'error': 'user_id is required'}), 400
@@ -745,7 +727,6 @@ def create_block():
     block = {
         "block_id": block_id,
         "user_id": user_id,
-        "type": block_type,
         "name": name,
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
@@ -757,7 +738,6 @@ def create_block():
     flow_status = {
         "user_id": user_id,
         "block_id": block_id,
-        "block_type": block_type,
         "initial_input": "",
         "flow_status": {},
         "created_at": datetime.utcnow(),

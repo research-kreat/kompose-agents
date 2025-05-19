@@ -13,7 +13,7 @@ load_dotenv()
 
 class KomposeBlockHandler(BaseBlockHandler):
     """
-    Handler for the Kompose block type - generates startup ideas and business approaches
+    Handler for the Kompose block - generates startup ideas and business approaches
     with streaming support for real-time task execution
     """
     
@@ -29,7 +29,7 @@ class KomposeBlockHandler(BaseBlockHandler):
         """
         # Check if the input is a greeting
         if self.is_greeting(user_input):
-            return self.handle_greeting(user_input, "kompose")
+            return self.handle_greeting(user_input)
         
         # Create specialized agent for kompose initialization
         kompose_agent = Agent(
@@ -118,7 +118,7 @@ class KomposeBlockHandler(BaseBlockHandler):
         """
         # Check if this is a greeting
         if self.is_greeting(user_message):
-            return self.handle_greeting(user_message, "kompose")
+            return self.handle_greeting(user_message)
         
         # Get conversation history
         history = self._get_conversation_history()

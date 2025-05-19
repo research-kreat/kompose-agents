@@ -66,13 +66,15 @@ export const api = {
    * Generate a Kompose business idea with 18 tasks
    * @param {Object} params - Parameters
    * @param {string} params.userId - User ID
+   * @param {string} params.blockId - Block ID to associate with
    * @param {Object} [params.uploadedData] - Optional uploaded data for analysis
    * @returns {Promise<Object>} - Response data with all tasks results
    */
-  generateKomposeIdea: async ({ userId, uploadedData = null }) => {
+  generateKomposeIdea: async ({ userId, blockId, uploadedData = null }) => {
     // Prepare request body
     const requestBody = {
-      user_id: userId
+      user_id: userId,
+      block_id: blockId
     };
     
     // Add uploaded data if provided
@@ -175,7 +177,7 @@ export const api = {
       throw new Error('User ID is required');
     }
     
-    const defaultName = name || `New Kompose Block`;
+    const defaultName = name || `New ${blockType.charAt(0).toUpperCase() + blockType.slice(1)} Block`;
     
     return api.fetchWithErrorHandling(`${API_BASE_URL}/blocks/new`, {
       method: 'POST',

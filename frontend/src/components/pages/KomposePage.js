@@ -12,7 +12,6 @@ export default function KomposePage() {
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationResults, setGenerationResults] = useState([]);
   
   const { 
     currentBlockId,
@@ -137,8 +136,6 @@ export default function KomposePage() {
       const response = await api.generateKomposeIdea({ userId });
       
       if (response.success && response.results) {
-        setGenerationResults(response.results);
-        
         // Add each result as a message
         for (const result of response.results) {
           addMessage({

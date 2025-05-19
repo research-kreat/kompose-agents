@@ -41,18 +41,6 @@ block_handlers = {
 
 # Standard flow steps for all block types in the correct order
 STANDARD_FLOW_STEPS = [
-    "title",
-    "abstract", 
-    "stakeholders",
-    "tags",
-    "assumptions",
-    "constraints",
-    "risks",
-    "areas",
-    "impact",
-    "connections",
-    "classifications",
-    "think_models"
 ]
 
 @app.route('/api/analyze', methods=['POST'])

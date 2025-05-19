@@ -35,18 +35,7 @@ class BaseBlockHandler(ABC):
         
         # Standard flow steps in the correct order
         self.flow_steps = [
-            "title",
-            "abstract",
-            "stakeholders",
-            "tags",
-            "assumptions",
-            "constraints",
-            "risks",
-            "areas",
-            "impact",
-            "connections",
-            "classifications",
-            "think_models"
+
         ]
     
     def is_greeting(self, user_input):

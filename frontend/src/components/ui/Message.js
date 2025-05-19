@@ -9,20 +9,6 @@ export default function Message({ message, isLast }) {
   
   // Card styles for different content types
   const cardStyles = {
-    title: "bg-blue-50 border-blue-200",
-    abstract: "bg-indigo-50 border-indigo-200",
-    stakeholders: "bg-purple-50 border-purple-200",
-    tags: "bg-pink-50 border-pink-200",
-    assumptions: "bg-red-50 border-red-200",
-    constraints: "bg-orange-50 border-orange-200",
-    risks: "bg-yellow-50 border-yellow-200",
-    areas: "bg-green-50 border-green-200",
-    impact: "bg-teal-50 border-teal-200",
-    connections: "bg-cyan-50 border-cyan-200",
-    classifications: "bg-sky-50 border-sky-200", 
-    think_models: "bg-emerald-50 border-emerald-200",
-    suggestion: "bg-gray-50 border-gray-200",
-    // Kompose business idea task types
     idea_name: "bg-blue-50 border-blue-200",
     tagline: "bg-indigo-50 border-indigo-200",
     summary: "bg-purple-50 border-purple-200",
@@ -51,20 +37,6 @@ export default function Message({ message, isLast }) {
 
   // Icons for different content types
   const cardIcons = {
-    title: "fa-heading",
-    abstract: "fa-align-left",
-    stakeholders: "fa-users",
-    tags: "fa-tags",
-    assumptions: "fa-lightbulb",
-    constraints: "fa-ban",
-    risks: "fa-exclamation-triangle",
-    areas: "fa-layer-group",
-    impact: "fa-chart-line",
-    connections: "fa-network-wired",
-    classifications: "fa-sitemap",
-    think_models: "fa-brain",
-    suggestion: "fa-comment",
-    // Kompose business idea task icons
     idea_name: "fa-lightbulb",
     tagline: "fa-quote-left",
     summary: "fa-file-alt",

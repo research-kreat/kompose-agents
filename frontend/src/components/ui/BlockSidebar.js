@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useChatStore } from '@/store/chatStore';
 import { api } from '@/lib/api';
-import { getBlockTypeInfo } from '@/lib/blockUtils';
 
 export default function BlockSidebar({ onBlockSelect, blockType = 'general' }) {
   const router = useRouter();
@@ -16,9 +15,6 @@ export default function BlockSidebar({ onBlockSelect, blockType = 'general' }) {
     addLog,
     userId
   } = useChatStore();
-  
-  // Get block info using the utility function
-  const blockInfo = getBlockTypeInfo(blockType);
   
   // Load blocks from API on component mount
   useEffect(() => {

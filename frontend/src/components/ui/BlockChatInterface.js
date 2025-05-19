@@ -7,7 +7,6 @@ import ChatInput from '@/components/ui/ChatInput';
 import TypingIndicator from '@/components/ui/TypingIndicator';
 import { useChatStore } from '@/store/chatStore';
 import { api } from '@/lib/api';
-import { getWelcomeMessage } from '@/lib/blockUtils';
 
 export default function BlockChatInterface({ blockType = 'general' }) {
   const router = useRouter();
@@ -57,7 +56,7 @@ export default function BlockChatInterface({ blockType = 'general' }) {
               setMessageHistory([
                 {
                   role: 'system',
-                  content: getWelcomeMessage(blockType),
+                  content: "Hi",
                   timestamp: new Date().toISOString()
                 }
               ]);
@@ -391,19 +390,6 @@ export default function BlockChatInterface({ blockType = 'general' }) {
         ref={chatContainerRef}
         className="flex-1 p-6 overflow-y-auto flex flex-col gap-4 bg-gray-50"
       >
-        {/* Welcome message when no messages yet */}
-        {messageHistory.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="message system"
-          >
-            <div className="p-4 rounded-md bg-gray-200 text-gray-800 text-center max-w-[80%] self-center">
-              <p>{getWelcomeMessage(blockType)}</p>
-            </div>
-          </motion.div>
-        )}
-        
         {/* Message history */}
         <AnimatePresence>
           {messageHistory.map((message, index) => (

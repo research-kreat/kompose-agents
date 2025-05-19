@@ -34,15 +34,6 @@ flow_collection = db.flow_status
 history_collection = db.conversation_history
 blocks_collection = db.blocks
 
-# Block handler mapping
-block_handlers = {
-    "kompose": KomposeBlockHandler
-}
-
-# Standard flow steps for all block types in the correct order
-STANDARD_FLOW_STEPS = [
-]
-
 @app.route('/api/analyze', methods=['POST'])
 def analyze_general_chat():
     """
@@ -60,13 +51,13 @@ def analyze_general_chat():
     # Create a new block ID
     block_id = str(uuid.uuid4())
     
-    # Initialize flow status with standard steps in the correct order
+    # Initialize flow status
     flow_status = {
         "user_id": user_id,
         "block_id": block_id,
         "block_type": "kompose",
         "initial_input": user_input,
-        "flow_status": {step: False for step in STANDARD_FLOW_STEPS},
+        "flow_status": {},
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     }
@@ -89,7 +80,7 @@ def analyze_general_chat():
         "block_id": block_id,
         "user_id": user_id,
         "type": "kompose",
-        "name": "New Kompose Block",
+        "name": "New Kompose Chat",
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     })
@@ -154,8 +145,7 @@ def analyze_general_chat():
 @app.route('/api/analysis_of_block', methods=['POST'])
 def analyze_existing_block():
     """
-    Enhanced endpoint for continuing conversation with an existing block
-    Uses improved history retention and context awareness
+    Endpoint for continuing conversation with an existing block
     """
     data = request.json
     user_id = data.get('user_id')
@@ -187,7 +177,7 @@ def analyze_existing_block():
     handler = KomposeBlockHandler(db, block_id, user_id)
     
     # Process the message with improved history utilization
-    response = handler.process_message(user_input, flow_data["flow_status"])
+    response = handler.process_message(user_input, flow_data.get("flow_status", {}))
     
     # Sanitize response to ensure plain text
     response = sanitize_response(response)
@@ -256,7 +246,7 @@ def generate_kompose_idea():
         "block_id": block_id,
         "block_type": "kompose",
         "initial_input": "Kompose Business Idea Generation",
-        "flow_status": {step: False for step in STANDARD_FLOW_STEPS},
+        "flow_status": {},
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     }
@@ -287,12 +277,9 @@ def generate_kompose_idea():
     # Initialize handler
     handler = KomposeBlockHandler(db, block_id, user_id)
     
-    # Process any uploaded data from the client
-    uploaded_data = data.get('uploaded_data')
-    
     # Generate the Kompose idea
     try:
-        results = handler.generate_kompose_idea(uploaded_data)
+        results = handler.generate_kompose_idea()
         
         # Store the results in history
         for i, result in enumerate(results):
@@ -301,7 +288,7 @@ def generate_kompose_idea():
                 "user_id": user_id,
                 "block_id": block_id,
                 "role": "assistant",
-                "message": f"Task {i+1}: {json.dumps(result, indent=2)}",
+                "message": f"Task {i+1}: {result.get('task_title', 'Task')}",
                 "result": result,
                 "task_number": i + 1,
                 "created_at": datetime.utcnow(),
@@ -336,189 +323,6 @@ def generate_kompose_idea():
             "success": False,
             "message": "Error generating Kompose idea"
         }), 500
-
-@app.route('/api/blocks', methods=['GET'])
-def get_blocks():
-    """
-    Get blocks for a user
-    """
-    user_id = request.args.get('user_id')
-    block_type = request.args.get('type', 'all')
-    limit = int(request.args.get('limit', 10))
-    
-    if not user_id:
-        return jsonify({'error': 'user_id is required'}), 400
-    
-    # Build query
-    query = {"user_id": user_id}
-    if block_type != 'all':
-        query["type"] = block_type
-    
-    # Fetch blocks from database
-    blocks = list(blocks_collection.find(
-        query,
-        {'_id': 0}
-    ).sort("created_at", -1).limit(limit))
-    
-    return jsonify({
-        "blocks": blocks
-    })
-
-@app.route('/api/blocks/<block_id>', methods=['GET'])
-def get_block(block_id):
-    """
-    Get a specific block and its messages
-    """
-    user_id = request.args.get('user_id')
-    
-    if not user_id:
-        return jsonify({'error': 'user_id is required'}), 400
-    
-    # Fetch block from database
-    block = blocks_collection.find_one(
-        {"block_id": block_id, "user_id": user_id},
-        {'_id': 0}
-    )
-    
-    if not block:
-        return jsonify({'error': 'Block not found'}), 404
-    
-    # Fetch messages for this block
-    messages = list(history_collection.find(
-        {"block_id": block_id, "user_id": user_id},
-        {'_id': 0, 'user_id': 0, 'block_id': 0}
-    ).sort("created_at", 1))  # Sort chronologically (oldest first)
-    
-    # Sanitize message content to ensure plain text
-    for message in messages:
-        if 'message' in message:
-            message['message'] = sanitize_response(message['message'])
-    
-    return jsonify({
-        "block": block,
-        "messages": messages
-    })
-
-@app.route('/api/blocks/<block_id>', methods=['DELETE'])
-def delete_block(block_id):
-    """
-    Delete a block and all its messages
-    """
-    data = request.json
-    user_id = data.get('user_id')
-    
-    if not user_id:
-        return jsonify({'error': 'user_id is required'}), 400
-    
-    # Delete block
-    blocks_collection.delete_one({"block_id": block_id, "user_id": user_id})
-    
-    # Delete flow status
-    flow_collection.delete_one({"block_id": block_id, "user_id": user_id})
-    
-    # Delete messages
-    history_collection.delete_many({"block_id": block_id, "user_id": user_id})
-    
-    return jsonify({
-        "success": True,
-        "message": "Block deleted successfully"
-    })
-
-@app.route('/api/blocks/<block_id>/clear', methods=['POST'])
-def clear_block(block_id):
-    """
-    Clear messages for a block
-    """
-    data = request.json
-    user_id = data.get('user_id')
-    
-    if not user_id:
-        return jsonify({'error': 'user_id is required'}), 400
-    
-    # Delete messages
-    history_collection.delete_many({"block_id": block_id, "user_id": user_id})
-    
-    # Reset flow status to match standard flow
-    flow_collection.update_one(
-        {"block_id": block_id, "user_id": user_id},
-        {"$set": {
-            "flow_status": {step: False for step in STANDARD_FLOW_STEPS},
-            "updated_at": datetime.utcnow()
-        }}
-    )
-    
-    # Add system message
-    history_collection.insert_one({
-        "user_id": user_id,
-        "block_id": block_id,
-        "role": "system",
-        "message": "Chat cleared. What's on your mind?",
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow()
-    })
-    
-    return jsonify({
-        "success": True,
-        "message": "Block cleared successfully"
-    })
-
-@app.route('/api/blocks/new', methods=['POST'])
-def create_new_block():
-    """
-    Create a new block
-    """
-    data = request.json
-    user_id = data.get('user_id')
-    name = data.get('name', 'New Kompose Block')
-    
-    if not user_id:
-        return jsonify({'error': 'user_id is required'}), 400
-    
-    # Create a new block ID
-    block_id = str(uuid.uuid4())
-    
-    # Initialize flow status with standard steps in the correct order
-    flow_status = {
-        "user_id": user_id,
-        "block_id": block_id,
-        "block_type": "kompose",
-        "initial_input": "",
-        "flow_status": {step: False for step in STANDARD_FLOW_STEPS},
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow()
-    }
-    
-    # Store in MongoDB
-    flow_collection.insert_one(flow_status)
-    
-    # Store block in blocks collection
-    blocks_collection.insert_one({
-        "block_id": block_id,
-        "user_id": user_id,
-        "type": "kompose",
-        "name": name,
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow()
-    })
-    
-    # Add welcome message
-    welcome_msg = "Welcome! I can help you generate innovative startup ideas and actionable business plans. How would you like to start?"
-    
-    history_collection.insert_one({
-        "user_id": user_id,
-        "block_id": block_id,
-        "role": "system",
-        "message": welcome_msg,
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow()
-    })
-    
-    return jsonify({
-        "block_id": block_id,
-        "block_type": "kompose",
-        "name": name,
-        "created_at": datetime.utcnow().isoformat()
-    })
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)

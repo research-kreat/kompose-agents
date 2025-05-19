@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Header from '@/components/ui/Header';
 import AgentCard from '@/components/ui/AgentCard';
@@ -39,7 +40,7 @@ export default function Home() {
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <h3 className="text-lg font-medium text-gray-700 mb-4 pb-2 border-b border-gray-300">
-            FEATURED APPLICATIONS
+            CHOOSE YOUR APPROACH
           </h3>
           
           <motion.div 
@@ -49,19 +50,19 @@ export default function Home() {
             animate="show"
           >
             <AgentCard 
-              icon="fa-lightbulb" 
-              title="Kompose" 
-              description="Generate startup ideas and business plans" 
+              icon="fa-comment" 
+              title="Interactive Mode" 
+              description="Chat with the AI and develop business ideas through conversation" 
               active={true} 
-              link="/kompose" 
+              link="/kompose/chat" 
             />
             
             <AgentCard 
-              icon="fa-comment" 
-              title="One Click Innovation" 
-              description="Generate All 18 Task in single click" 
+              icon="fa-lightbulb" 
+              title="One-Click Business Generation" 
+              description="Generate a complete business idea with all 18 steps automatically" 
               active={true} 
-              link="/one-click-innovation" 
+              link="/kompose/generate" 
             />
           </motion.div>
         </motion.section>

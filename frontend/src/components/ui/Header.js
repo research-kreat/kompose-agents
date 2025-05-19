@@ -5,7 +5,7 @@ import { getBlockTypeInfo } from '@/lib/blockUtils';
 
 export default function Header({ 
   blockId = null, 
-  blockType = 'general',
+  blockType = 'kompose',
   handleNewChat = () => {} 
 }) {
   const router = useRouter();

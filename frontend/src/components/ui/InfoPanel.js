@@ -9,7 +9,6 @@ export default function InfoPanel() {
   const getBlockTypeLabel = () => {
     const typeLabels = {
       kompose: 'Kompose Business Generator',
-      general: 'General Assistant'
     };
     
     return typeLabels[blockInfo.type] || 'Kompose Assistant';

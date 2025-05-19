@@ -19,7 +19,7 @@ export const useChatStore = create(
       blockInfo: {
         created: null,
         messageCount: 0,
-        type: 'general', // Default type is 'general'
+        type: 'kompose', 
         blockId: null,   // This will hold the backend blockId when created
       },
       
@@ -140,7 +140,7 @@ export const useChatStore = create(
         blockInfo: {
           created: null,
           messageCount: 0,
-          type: 'general',
+          type: 'kompose',
           blockId: null,
         },
         logs: [
@@ -153,7 +153,7 @@ export const useChatStore = create(
       }),
       
       // Create a new block
-      createNewBlock: (type = 'general', name = 'New Chat') => {
+      createNewBlock: (type = 'kompose', name = 'New Chat') => {
         const blockId = uuidv4();
         const newBlock = {
           block_id: blockId,

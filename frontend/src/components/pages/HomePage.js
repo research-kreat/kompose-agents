@@ -26,7 +26,7 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to KRAFT</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to Kompose</h2>
           <p className="text-gray-600">
             Your AI-powered creative framework for innovation and problem-solving
           </p>
@@ -58,10 +58,10 @@ export default function Home() {
             
             <AgentCard 
               icon="fa-comment" 
-              title="General Assistant" 
-              description="AI-powered creative guidance" 
+              title="One Click Innovation" 
+              description="Generate All 18 Task in single click" 
               active={true} 
-              link="/blocks?type=general" 
+              link="/one-click-innovation" 
             />
           </motion.div>
         </motion.section>

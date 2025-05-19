@@ -15,7 +15,7 @@ export default function Header({
   
   // Get page title based on type
   const getPageTitle = () => {
-    return blockInfo ? blockInfo.title : 'KRAFT';
+    return blockInfo ? blockInfo.title : 'Kompose';
   };
   
   // Get icon based on page type
@@ -32,7 +32,7 @@ export default function Header({
           animate={{ rotate: 0 }}
           transition={{ duration: 0.5 }}
         />
-        <h1 className="text-xl font-semibold text-gray-800">KRAFT</h1>
+        <h1 className="text-xl font-semibold text-gray-800">Kompose</h1>
         <span className="text-sm text-gray-600 ml-2 border-l pl-3 border-gray-300">
           {getPageTitle()}
         </span>

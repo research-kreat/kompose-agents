@@ -12,7 +12,7 @@ export default function InfoPanel() {
       general: 'General Assistant'
     };
     
-    return typeLabels[blockInfo.type] || 'KRAFT Assistant';
+    return typeLabels[blockInfo.type] || 'Kompose Assistant';
   };
   
   return (

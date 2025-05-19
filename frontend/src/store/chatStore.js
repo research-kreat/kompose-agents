@@ -27,7 +27,7 @@ export const useChatStore = create(
       logs: [
         {
           type: 'system',
-          message: 'Ready to assist with KRAFT',
+          message: 'Ready to assist with Kompose',
           timestamp: new Date().toLocaleTimeString()
         }
       ],
@@ -146,7 +146,7 @@ export const useChatStore = create(
         logs: [
           {
             type: 'system',
-            message: 'Ready to assist with KRAFT',
+            message: 'Ready to assist with Kompose',
             timestamp: new Date().toLocaleTimeString()
           }
         ]
@@ -185,7 +185,7 @@ export const useChatStore = create(
       }
     }),
     {
-      name: 'kraft-chat-storage',
+      name: 'Kompose-chat-storage',
       partialize: (state) => ({
         userId: state.userId,
         blocks: state.blocks,

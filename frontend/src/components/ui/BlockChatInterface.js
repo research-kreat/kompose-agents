@@ -302,7 +302,7 @@ export default function BlockChatInterface({ blockType = 'general' }) {
     
     const a = document.createElement('a');
     a.href = url;
-    a.download = `kraft-chat-${currentBlockId.substring(0, 8)}-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `Kompose-chat-${currentBlockId.substring(0, 8)}-${new Date().toISOString().slice(0, 10)}.json`;
     
     // Trigger download
     document.body.appendChild(a);
@@ -338,18 +338,10 @@ export default function BlockChatInterface({ blockType = 'general' }) {
   // Get block title based on type
   const getBlockTitle = () => {
     const titles = {
-      idea: 'Idea Development',
-      problem: 'Problem Definition',
-      possibility: 'Possibility Explorer',
-      moonshot: 'Moonshot Ideation',
-      needs: 'Needs Analysis',
-      opportunity: 'Opportunity Assessment',
-      concept: 'Concept Development',
-      outcome: 'Outcome Evaluation',
-      general: 'General Assistant'
+      kompose: 'Bussiness Development',
     };
     
-    return titles[blockType] || 'KRAFT Assistant';
+    return titles[blockType] || 'Kompose Assistant';
   };
 
   return (

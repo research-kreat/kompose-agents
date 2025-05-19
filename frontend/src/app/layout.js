@@ -4,7 +4,7 @@ import { Inter } from 'next/font/google';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'KRAFT - Creative Idea Framework',
+  title: 'Kompose - Creative Idea Framework',
   description: 'AI-powered creative framework for innovation and problem-solving',
 };
 

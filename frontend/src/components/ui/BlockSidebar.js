@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useChatStore } from '@/store/chatStore';
 import { api } from '@/lib/api';
+import { getBlockTypeInfo } from '@/lib/blockUtils';
 
 export default function BlockSidebar({ onBlockSelect, blockType = 'general' }) {
   const router = useRouter();
@@ -15,6 +16,9 @@ export default function BlockSidebar({ onBlockSelect, blockType = 'general' }) {
     addLog,
     userId
   } = useChatStore();
+  
+  // Get block type info
+  const blockInfo = getBlockTypeInfo(blockType);
   
   // Load blocks from API on component mount
   useEffect(() => {
@@ -76,9 +80,11 @@ export default function BlockSidebar({ onBlockSelect, blockType = 'general' }) {
   return (
     <div className="h-full bg-white border-r border-gray-200 flex flex-col">
       <div className="p-6 border-b border-gray-200">
-        <h3 className="text-lg font-medium text-gray-800 mb-2">{blockInfo.title}</h3>
+        <h3 className="text-lg font-medium text-gray-800 mb-2">
+          {blockInfo?.title || "Kompose"}
+        </h3>
         <p className="text-sm text-gray-600">
-          {blockInfo.description}
+          {blockInfo?.description || "Generate startup ideas and business plans"}
         </p>
       </div>
       

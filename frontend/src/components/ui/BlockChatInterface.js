@@ -321,15 +321,7 @@ export default function BlockChatInterface({ blockType = 'general' }) {
   // Get block icon based on type
   const getBlockIcon = () => {
     const icons = {
-      idea: 'fa-lightbulb',
-      problem: 'fa-question-circle',
-      possibility: 'fa-route',
-      moonshot: 'fa-rocket',
-      needs: 'fa-clipboard-list',
-      opportunity: 'fa-door-open',
-      concept: 'fa-puzzle-piece',
-      outcome: 'fa-flag-checkered',
-      general: 'fa-comment'
+      kompose: 'fa-lightbulb',
     };
     
     return icons[blockType] || 'fa-comment';

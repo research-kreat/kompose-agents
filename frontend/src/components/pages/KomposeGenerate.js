@@ -1,194 +1,260 @@
+// frontend/src/components/pages/KomposeGenerate.js
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/ui/Header';
-import Message from '@/components/ui/Message';
-import ChatInput from '@/components/ui/ChatInput';
-import TypingIndicator from '@/components/ui/TypingIndicator';
 import { useChatStore } from '@/store/chatStore';
 import { api } from '@/lib/api';
+import Message from '@/components/ui/Message';
+import TypingIndicator from '@/components/ui/TypingIndicator';
 
-export default function KomposeChat() {
-  const [isClient, setIsClient] = useState(false);
+export default function KomposeGenerate() {
+  const router = useRouter();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [results, setResults] = useState([]);
+  const [currentStep, setCurrentStep] = useState(0);
   const messagesEndRef = useRef(null);
   
-  // Extract necessary state from the store
+  // Extract state from the store
   const userId = useChatStore(state => state.userId);
-  const messageHistory = useChatStore(state => state.messageHistory);
-  const isTyping = useChatStore(state => state.isTyping);
-  const addMessage = useChatStore(state => state.addMessage);
   const addLog = useChatStore(state => state.addLog);
-  const setIsTyping = useChatStore(state => state.setIsTyping);
-  const setMessageHistory = useChatStore(state => state.setMessageHistory);
   const initializeUser = useChatStore(state => state.initializeUser);
   const resetStore = useChatStore(state => state.resetStore);
+  const createNewBlock = useChatStore(state => state.createNewBlock);
+  const messageHistory = useChatStore(state => state.messageHistory);
+  const setMessageHistory = useChatStore(state => state.setMessageHistory);
+  const setBlockInfo = useChatStore(state => state.setBlockInfo);
+  const currentBlockId = useChatStore(state => state.currentBlockId);
+  
+  // Task titles matching the backend tasks
+  const taskTitles = [
+    "Initial Classification",
+    "Business Idea Generation",
+    "Market Analysis",
+    "Customer Segmentation",
+    "Value Proposition",
+    "Business Model",
+    "Competitor Analysis",
+    "SWOT Analysis",
+    "Marketing Strategy",
+    "Product Development Roadmap",
+    "Financial Projections",
+    "Team Structure",
+    "Go-to-Market Strategy",
+    "Risk Assessment",
+    "Technology Requirements",
+    "Scalability Plan",
+    "Legal and Regulatory Considerations",
+    "Implementation Action Plan"
+  ];
 
-  // Prevent hydration issues
+  // Initialize user on component mount
   useEffect(() => {
-    setIsClient(true);
-    // Initialize user if needed
     initializeUser();
+    resetStore();
     
-    // Reset message history for new chat
+    // Set a welcome message
     setMessageHistory([
       {
         role: 'system',
-        content: 'Welcome to Kompose Interactive Mode. I can help you develop innovative business ideas through conversation. How would you like to start?',
+        content: 'Welcome to One-Click Business Generation! Click "Generate Business Idea" below to create a complete business concept with all 18 steps.',
         timestamp: new Date().toISOString()
       }
     ]);
     
-    // Cleanup on unmount
-    return () => {
-      resetStore();
-    };
+    // Create a new block for this session
+    const blockId = createNewBlock('kompose', 'Kompose Business Generator');
+    
+    // Set block info
+    setBlockInfo({
+      type: 'kompose',
+      created: new Date().toISOString(),
+      blockId: blockId
+    });
+    
   }, []);
-
-  // Scroll to bottom when messages change
+  
+  // Scroll to bottom when results change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messageHistory, isTyping]);
+  }, [results, isGenerating, currentStep]);
 
-  // Handle sending a message
-  const handleSendMessage = async (content) => {
-    if (!content.trim()) return;
-  
-    // Add user message to chat
-    const userMessage = {
-      role: 'user',
-      content,
-      timestamp: new Date().toISOString()
-    };
-    addMessage(userMessage);
-  
-    // Set typing indicator
-    setIsTyping(true);
-  
+  // Generate a business idea
+  const generateIdea = async () => {
+    if (isGenerating) return;
+    
+    // Reset previous results
+    setResults([]);
+    setCurrentStep(0);
+    setIsGenerating(true);
+    
     try {
-      // Call the API to get response
-      const data = await api.analyzeBlock({
-        message: content,
-        userId
-      });
-      
-      // Extract response content
-      let responseContent = '';
-      let fullResponseData = {};
-      
-      if (data.response && typeof data.response === 'object') {
-        // Store the full response data
-        fullResponseData = data.response;
-        
-        if (data.response.suggestion) {
-          responseContent = data.response.suggestion;
-          
-          // Display classification message if available
-          if (data.response.classification_message) {
-            addMessage({
-              role: 'assistant',
-              content: data.response.classification_message,
-              timestamp: new Date().toISOString()
-            });
-          }
-        } else if (data.response.analysis) {
-          responseContent = `${data.response.analysis}\n\n${data.response.suggestion}`;
-        } else {
-          responseContent = JSON.stringify(data.response, null, 2);
+      // Add a message showing generation is starting
+      setMessageHistory([
+        ...messageHistory,
+        {
+          role: 'user',
+          content: 'Generate a complete business idea',
+          timestamp: new Date().toISOString()
+        },
+        {
+          role: 'system',
+          content: 'Starting business idea generation with 18 task analysis...',
+          timestamp: new Date().toISOString()
         }
-      } else if (data.response && typeof data.response === 'string') {
-        responseContent = data.response;
-        fullResponseData = { suggestion: data.response };
-      } else {
-        responseContent = "I'm not sure how to respond. Can you provide more details?";
-        fullResponseData = { suggestion: responseContent };
-      }
-      
-      // Add assistant's response to chat
-      addMessage({
-        role: 'assistant',
-        content: responseContent,
-        timestamp: new Date().toISOString(),
-        fullResponse: fullResponseData
-      });
+      ]);
       
       addLog({
         type: 'info',
-        message: 'Received response from assistant'
+        message: 'Starting Kompose business idea generation'
       });
       
+      // Call the API to generate the idea
+      const response = await api.generateKomposeIdea({
+        userId,
+        blockId: currentBlockId
+      });
+      
+      if (response.success && response.results) {
+        // Process each result
+        const formattedResults = response.results.map((result, index) => ({
+          role: 'assistant',
+          content: `Task ${index + 1}: ${result.task_title || taskTitles[index] || 'Task'}`,
+          timestamp: new Date().toISOString(),
+          fullResponse: result
+        }));
+        
+        // Update the message history with all results
+        setMessageHistory([
+          ...messageHistory,
+          {
+            role: 'system',
+            content: 'Business idea generated successfully! Review each section below:',
+            timestamp: new Date().toISOString()
+          },
+          ...formattedResults
+        ]);
+        
+        setResults(response.results);
+        
+        addLog({
+          type: 'success',
+          message: 'Generated Kompose business idea with 18 tasks'
+        });
+      } else {
+        throw new Error(response.message || 'Failed to generate business idea');
+      }
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error generating idea:', error);
       
       // Add error message
-      addMessage({
-        role: 'system',
-        content: `Error: ${error.message}. Please try again.`,
-        timestamp: new Date().toISOString(),
-        error: true
-      });
+      setMessageHistory([
+        ...messageHistory,
+        {
+          role: 'system',
+          content: `Error generating business idea: ${error.message}. Please try again.`,
+          timestamp: new Date().toISOString(),
+          error: true
+        }
+      ]);
       
       addLog({
         type: 'error',
-        message: `Error sending message: ${error.message}`
+        message: `Error generating business idea: ${error.message}`
       });
     } finally {
-      setIsTyping(false);
+      setIsGenerating(false);
     }
   };
-
-  // Handle clearing the chat
-  const handleClearChat = () => {
-    if (messageHistory.length > 1) {
-      if (!confirm('Are you sure you want to clear this chat? This cannot be undone.')) {
-        return;
-      }
+  
+  // View a block
+  const viewBlock = () => {
+    if (currentBlockId) {
+      router.push(`/blocks/${currentBlockId}`);
     }
-
-    setMessageHistory([
-      {
-        role: 'system',
-        content: 'Chat cleared. What business idea would you like to explore?',
-        timestamp: new Date().toISOString()
-      }
-    ]);
-    
-    addLog({
-      type: 'system',
-      message: 'Chat cleared'
-    });
   };
-
-  if (!isClient) {
-    return null; // Prevent hydration errors
-  }
 
   return (
     <main className="min-h-screen flex flex-col bg-gray-100">
-      <Header title="Kompose Interactive Mode" />
+      <Header 
+        blockId={currentBlockId}
+        blockType="kompose"
+        handleNewChat={() => router.push('/kompose/generate')}
+      />
       
-      <div className="flex-1 flex flex-col h-[calc(100vh-72px)]">
-        <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-white">
-          <div className="flex items-center gap-3">
-            <i className="fas fa-comment text-xl text-primary"></i>
-            <h2 className="text-lg font-medium text-gray-800">Interactive Business Ideation</h2>
+      <div className="flex-1 p-6 overflow-y-auto flex flex-col items-center">
+        <motion.div
+          className="max-w-4xl w-full bg-white rounded-lg shadow-md p-6 mb-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <i className="fas fa-lightbulb text-primary text-xl"></i>
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800">One-Click Business Generation</h2>
+              <p className="text-gray-600">Generate a complete business idea with all 18 analytical tasks</p>
+            </div>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex justify-center mb-6">
             <button
-              onClick={handleClearChat}
-              disabled={messageHistory.length <= 1}
-              className="p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors"
-              title="Clear Chat"
+              onClick={generateIdea}
+              disabled={isGenerating}
+              className={`px-6 py-3 rounded-lg text-white font-medium flex items-center gap-2 ${
+                isGenerating ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary hover:bg-primary-dark'
+              }`}
             >
-              <i className="fas fa-trash"></i>
+              {isGenerating ? (
+                <>
+                  <div className="w-5 h-5 border-t-2 border-r-2 border-white rounded-full animate-spin"></div>
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-rocket"></i>
+                  Generate Business Idea
+                </>
+              )}
             </button>
+            
+            {currentBlockId && results.length > 0 && (
+              <button
+                onClick={viewBlock}
+                className="ml-4 px-6 py-3 rounded-lg border border-primary text-primary hover:bg-primary/5 font-medium flex items-center gap-2"
+              >
+                <i className="fas fa-eye"></i>
+                View Full Results
+              </button>
+            )}
           </div>
-        </div>
+          
+          {results.length > 0 && (
+            <div className="mb-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-800">Generated Business Idea</h3>
+                <span className="text-sm text-gray-600">
+                  {currentStep + 1} of {results.length} tasks completed
+                </span>
+              </div>
+              
+              <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+                <div 
+                  className="bg-primary h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${((currentStep + 1) / results.length) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
+        </motion.div>
         
-        <div className="flex-1 p-6 overflow-y-auto flex flex-col gap-4 bg-gray-50">
-          {/* Message history */}
+        <div className="max-w-4xl w-full">
+          {/* Message history, including results */}
           {messageHistory.map((message, index) => (
             <Message 
               key={`${message.role}-${index}`}
@@ -198,16 +264,11 @@ export default function KomposeChat() {
           ))}
           
           {/* Typing indicator */}
-          {isTyping && <TypingIndicator />}
+          {isGenerating && <TypingIndicator />}
           
           {/* Invisible element for scrolling */}
           <div ref={messagesEndRef} />
         </div>
-        
-        <ChatInput 
-          onSendMessage={handleSendMessage}
-          disabled={isTyping}
-        />
       </div>
     </main>
   );

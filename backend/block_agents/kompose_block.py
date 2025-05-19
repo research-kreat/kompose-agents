@@ -362,26 +362,26 @@ class KomposeBlockHandler(BaseBlockHandler):
             expected_output="JSON with product development roadmap"
         ))
         
-        # Task 10: Financial Projections
+        # Task 10: Financial Projections (Fixed)
         tasks.append(Task(
             description=f"""
             Create financial projections for the business idea.
             
             FORMAT YOUR RESPONSE AS JSON:
             {{
-                "startup_costs": {
+                "startup_costs": {{
                     "total": "Estimated total startup costs",
                     "breakdown": ["List of 4-5 major startup cost categories with amounts"]
-                },
-                "monthly_expenses": {
+                }},
+                "monthly_expenses": {{
                     "total": "Estimated monthly expenses",
                     "breakdown": ["List of 4-5 major expense categories with amounts"]
-                },
-                "revenue_projections": {
+                }},
+                "revenue_projections": {{
                     "year_1": "Projected revenue for year 1",
                     "year_2": "Projected revenue for year 2",
                     "year_3": "Projected revenue for year 3"
-                },
+                }},
                 "profitability_timeline": "Estimated timeline to profitability",
                 "funding_requirements": "Estimated funding needed"
             }}
@@ -389,7 +389,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             agent=kompose_agent,
             expected_output="JSON with financial projections"
         ))
-        
+
         # Task 11: Team Structure
         tasks.append(Task(
             description=f"""

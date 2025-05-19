@@ -7,92 +7,6 @@ export default function Message({ message, isLast }) {
   const messageRef = useRef(null);
   const [showDetails, setShowDetails] = useState(false);
   
-  // Card styles for different content types
-  const cardStyles = {
-    idea_name: "bg-blue-50 border-blue-200",
-    tagline: "bg-indigo-50 border-indigo-200",
-    summary: "bg-purple-50 border-purple-200",
-    market_size: "bg-pink-50 border-pink-200",
-    market_growth: "bg-red-50 border-red-200",
-    primary_segment: "bg-orange-50 border-orange-200",
-    core_value_proposition: "bg-yellow-50 border-yellow-200",
-    revenue_model: "bg-green-50 border-green-200",
-    direct_competitors: "bg-teal-50 border-teal-200",
-    strengths: "bg-cyan-50 border-cyan-200",
-    weaknesses: "bg-sky-50 border-sky-200", 
-    opportunities: "bg-emerald-50 border-emerald-200",
-    threats: "bg-amber-50 border-amber-200",
-    brand_positioning: "bg-lime-50 border-lime-200",
-    mvp_features: "bg-green-50 border-green-200",
-    startup_costs: "bg-teal-50 border-teal-200",
-    founding_team: "bg-cyan-50 border-cyan-200",
-    launch_strategy: "bg-sky-50 border-sky-200", 
-    market_risks: "bg-emerald-50 border-emerald-200",
-    core_technologies: "bg-amber-50 border-amber-200",
-    growth_drivers: "bg-lime-50 border-lime-200",
-    business_structure: "bg-green-50 border-green-200",
-    strategic_partners: "bg-teal-50 border-teal-200",
-    months_1_3: "bg-cyan-50 border-cyan-200"
-  };
-
-  // Icons for different content types
-  const cardIcons = {
-    idea_name: "fa-lightbulb",
-    tagline: "fa-quote-left",
-    summary: "fa-file-alt",
-    market_size: "fa-chart-pie",
-    market_growth: "fa-chart-line",
-    primary_segment: "fa-users",
-    core_value_proposition: "fa-award",
-    revenue_model: "fa-money-bill-wave",
-    direct_competitors: "fa-chess",
-    strengths: "fa-plus-circle",
-    weaknesses: "fa-minus-circle", 
-    opportunities: "fa-door-open",
-    threats: "fa-exclamation-triangle",
-    brand_positioning: "fa-bullseye",
-    mvp_features: "fa-list-check",
-    startup_costs: "fa-coins",
-    founding_team: "fa-user-friends",
-    launch_strategy: "fa-rocket", 
-    market_risks: "fa-skull-crossbones",
-    core_technologies: "fa-microchip",
-    growth_drivers: "fa-seedling",
-    business_structure: "fa-building",
-    strategic_partners: "fa-handshake",
-    months_1_3: "fa-calendar"
-  };
-  
-  // Nice human-readable labels for each key
-  const keyLabels = {
-    suggestion: "Suggestion",
-    idea_name: "Business Idea Name",
-    tagline: "Tagline",
-    summary: "Summary",
-    market_size: "Market Size",
-    market_growth: "Market Growth",
-    primary_segment: "Primary Customer Segment",
-    core_value_proposition: "Value Proposition",
-    revenue_model: "Revenue Model",
-    direct_competitors: "Direct Competitors",
-    strengths: "Strengths",
-    weaknesses: "Weaknesses", 
-    opportunities: "Opportunities",
-    threats: "Threats",
-    brand_positioning: "Brand Positioning",
-    mvp_features: "MVP Features",
-    startup_costs: "Startup Costs",
-    founding_team: "Founding Team",
-    launch_strategy: "Launch Strategy", 
-    market_risks: "Market Risks",
-    core_technologies: "Core Technologies",
-    growth_drivers: "Growth Drivers",
-    business_structure: "Business Structure",
-    strategic_partners: "Strategic Partners",
-    months_1_3: "First 3 Months Plan",
-    matrix_data: "Matrix Data"
-  };
-  
   // Scroll into view if it's the last message
   useEffect(() => {
     if (isLast && messageRef.current) {
@@ -128,21 +42,56 @@ export default function Message({ message, isLast }) {
     return formattedContent;
   };
   
-  // Format list items for display
-  const formatListItems = (items) => {
-    if (!Array.isArray(items)) return formatMessageContent(items);
+  // Get icon for task number
+  const getTaskIcon = (taskNumber) => {
+    const icons = {
+      1: 'fa-tag', // Initial Classification
+      2: 'fa-building', // Similar Business Analysis
+      3: 'fa-chart-pie', // Market Opportunity
+      4: 'fa-fire', // Market Trends
+      5: 'fa-chess', // Competition Analysis
+      6: 'fa-search', // Opportunity Assessment
+      7: 'fa-key', // Key Success Factors
+      8: 'fa-chart-line', // Growth Drivers
+      9: 'fa-money-bill-wave', // Investment Landscape
+      10: 'fa-microchip', // Technology Stack
+      11: 'fa-gavel', // Regulatory Environment
+      12: 'fa-truck', // Supply Chain
+      13: 'fa-users', // Customer Experience
+      14: 'fa-clipboard-list', // Resource Requirements
+      15: 'fa-exclamation-triangle', // Risk Assessment
+      16: 'fa-calculator', // Unit Economics
+      17: 'fa-chart-bar', // Market Size Segmentation
+      18: 'fa-shield-alt', // Competitive Moat
+    };
     
-    return (
-      <ul className="list-disc ml-5 mt-2 space-y-1">
-        {items.map((item, index) => (
-          <li key={index} className="text-gray-700">
-            {typeof item === 'object' 
-              ? JSON.stringify(item) 
-              : item}
-          </li>
-        ))}
-      </ul>
-    );
+    return icons[taskNumber] || 'fa-file-alt';
+  };
+  
+  // Get task background color based on task number
+  const getTaskBackgroundColor = (taskNumber) => {
+    const colors = {
+      1: 'bg-blue-50 border-blue-200',
+      2: 'bg-indigo-50 border-indigo-200',
+      3: 'bg-purple-50 border-purple-200',
+      4: 'bg-pink-50 border-pink-200',
+      5: 'bg-red-50 border-red-200',
+      6: 'bg-orange-50 border-orange-200',
+      7: 'bg-yellow-50 border-yellow-200',
+      8: 'bg-green-50 border-green-200',
+      9: 'bg-teal-50 border-teal-200',
+      10: 'bg-cyan-50 border-cyan-200',
+      11: 'bg-sky-50 border-sky-200',
+      12: 'bg-emerald-50 border-emerald-200',
+      13: 'bg-amber-50 border-amber-200',
+      14: 'bg-lime-50 border-lime-200',
+      15: 'bg-rose-50 border-rose-200',
+      16: 'bg-fuchsia-50 border-fuchsia-200',
+      17: 'bg-violet-50 border-violet-200',
+      18: 'bg-slate-50 border-slate-200',
+    };
+    
+    return colors[taskNumber] || 'bg-gray-50 border-gray-200';
   };
   
   // Format timestamp
@@ -157,7 +106,7 @@ export default function Message({ message, isLast }) {
     visible: { opacity: 1, y: 0 }
   };
   
-  // Toggle details view for assistants' responses when fullResponse exists
+  // Toggle details view
   const toggleDetails = () => {
     if (role === 'assistant' && fullResponse) {
       setShowDetails(!showDetails);
@@ -185,7 +134,7 @@ export default function Message({ message, isLast }) {
     const rowCount = firstColumn.length;
     
     return (
-      <div className="overflow-x-auto max-w-full">
+      <div className="overflow-x-auto max-w-full mt-4 mb-6 rounded-lg shadow-sm">
         <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
           <thead className="bg-gray-50">
             <tr>
@@ -193,7 +142,7 @@ export default function Message({ message, isLast }) {
                 <th 
                   key={index} 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200"
                 >
                   {key}
                 </th>
@@ -210,7 +159,7 @@ export default function Message({ message, isLast }) {
                   return (
                     <td 
                       key={colIndex} 
-                      className="px-6 py-4 whitespace-normal text-sm text-gray-500 border-r border-gray-200 last:border-r-0"
+                      className="px-4 py-3 whitespace-normal text-sm text-gray-600 border-r border-gray-200 last:border-r-0"
                       dangerouslySetInnerHTML={{ 
                         __html: typeof cellData === 'string' 
                           ? cellData.replace(/\n/g, '<br>') 
@@ -249,128 +198,52 @@ export default function Message({ message, isLast }) {
   const renderKomposeTaskResult = () => {
     if (!isKomposeTaskResult) return null;
     
+    const taskNumber = fullResponse.task_number;
+    const taskBackgroundColor = getTaskBackgroundColor(taskNumber);
+    const taskIcon = getTaskIcon(taskNumber);
+    
     return (
-      <div className="mt-4 w-full bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-primary text-black p-3 font-medium flex items-center gap-2">
+      <div className={`mt-4 w-full bg-white rounded-lg shadow-sm border ${taskBackgroundColor.replace('bg-', 'border-')} overflow-hidden`}>
+        <div className={`${taskBackgroundColor} p-3 font-medium flex items-center gap-2`}>
           <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-            <i className="fas fa-tasks"></i>
+            <i className={`fas ${taskIcon}`}></i>
           </div>
           <div>
-            Task {fullResponse.task_number}: {fullResponse.task_title}
+            Task {taskNumber}: {fullResponse.task_title}
           </div>
         </div>
         
-        <div className="p-4 space-y-4">
+        <div className="p-4">
           {/* Render matrix table if it exists */}
-          {fullResponse.matrix_data && (
-            <div className="mb-4">
-              {renderMatrixTable(fullResponse.matrix_data)}
+          {fullResponse.matrix_data && Object.keys(fullResponse.matrix_data).length > 0 && (
+            renderMatrixTable(fullResponse.matrix_data)
+          )}
+          
+          {/* Fallback for tasks without matrix data */}
+          {(!fullResponse.matrix_data || Object.keys(fullResponse.matrix_data).length === 0) && fullResponse.raw_result && (
+            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+              <pre className="whitespace-pre-wrap text-sm text-gray-600">
+                {fullResponse.raw_result}
+              </pre>
             </div>
           )}
           
-          {/* Render other properties (excluding special ones) */}
-          {Object.keys(fullResponse).filter(key => 
-            key !== 'task_number' && 
-            key !== 'task_title' && 
-            key !== 'error' &&
-            key !== 'raw_result' &&
-            key !== 'matrix_data'
-          ).map(key => (
-            <div 
-              key={key}
-              className={`p-3 rounded-lg border ${cardStyles[key] || 'bg-gray-50 border-gray-200'}`}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${cardStyles[key]?.replace('bg-', 'bg-').replace('border-', 'text-') || 'bg-gray-200 text-gray-600'}`}>
-                  <i className={`fas ${cardIcons[key] || 'fa-file-alt'} text-sm`}></i>
-                </div>
-                <h4 className="font-medium text-gray-800">{keyLabels[key] || key}</h4>
+          {/* Display error if present */}
+          {fullResponse.error && (
+            <div className="bg-red-50 p-3 rounded-lg border border-red-200 mt-2">
+              <div className="flex items-center gap-2">
+                <i className="fas fa-exclamation-circle text-red-500"></i>
+                <span className="font-medium text-red-700">Error:</span>
               </div>
-              
-              <div className="pl-8">
-                {typeof fullResponse[key] === 'string' ? (
-                  <div dangerouslySetInnerHTML={{ __html: formatMessageContent(fullResponse[key]) }} />
-                ) : Array.isArray(fullResponse[key]) ? (
-                  formatListItems(fullResponse[key])
-                ) : typeof fullResponse[key] === 'object' ? (
-                  <div className="space-y-3">
-                    {Object.keys(fullResponse[key]).map(subKey => (
-                      <div key={subKey} className="mb-2">
-                        <div className="font-medium text-sm text-gray-700 mb-1">{subKey}:</div>
-                        {typeof fullResponse[key][subKey] === 'string' ? (
-                          <div dangerouslySetInnerHTML={{ __html: formatMessageContent(fullResponse[key][subKey]) }} />
-                        ) : Array.isArray(fullResponse[key][subKey]) ? (
-                          formatListItems(fullResponse[key][subKey])
-                        ) : (
-                          <div className="pl-4 text-gray-700">{JSON.stringify(fullResponse[key][subKey])}</div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div dangerouslySetInnerHTML={{ __html: formatMessageContent(String(fullResponse[key])) }} />
-                )}
-              </div>
+              <p className="text-red-600 mt-1 pl-6">{fullResponse.error}</p>
             </div>
-          ))}
+          )}
         </div>
       </div>
     );
   };
   
-  // Render response cards for regular assistant messages
-  const renderResponseCards = () => {
-    if (role !== 'assistant' || !fullResponse || typeof fullResponse !== 'object' || isKomposeTaskResult) {
-      return null;
-    }
-    
-    // Get the keys we want to display as cards (excluding some meta fields)
-    const cardKeys = Object.keys(fullResponse).filter(key => 
-      key !== 'updated_flow_status' && 
-      key !== 'classification_message' &&
-      key !== 'identified_as' &&
-      key !== 'display_separately' &&
-      key !== 'current_step' &&
-      key !== 'current_step_completed' &&
-      key in cardStyles
-    );
-    
-    if (cardKeys.length === 0) return null;
-    
-    return (
-      <div className="mt-4 space-y-3 w-full">
-        {cardKeys.map(key => (
-          <div 
-            key={key}
-            className={`p-4 rounded-lg border ${cardStyles[key] || 'bg-gray-50 border-gray-200'} shadow-sm`}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${cardStyles[key].replace('bg-', 'bg-').replace('border-', 'text-')}`}>
-                <i className={`fas ${cardIcons[key] || 'fa-file-alt'}`}></i>
-              </div>
-              <h4 className="font-medium text-gray-800">{keyLabels[key] || key}</h4>
-            </div>
-            
-            <div className="pl-10">
-              {key === 'title' || key === 'abstract' || key === 'suggestion' ? (
-                <div dangerouslySetInnerHTML={{ __html: formatMessageContent(fullResponse[key]) }} />
-              ) : Array.isArray(fullResponse[key]) ? (
-                formatListItems(fullResponse[key])
-              ) : typeof fullResponse[key] === 'object' ? (
-                <pre className="text-sm bg-white p-2 rounded overflow-auto">
-                  {JSON.stringify(fullResponse[key], null, 2)}
-                </pre>
-              ) : (
-                <div dangerouslySetInnerHTML={{ __html: formatMessageContent(fullResponse[key]) }} />
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-  
-  // Render detailed response data if requested
+  // Render response details if requested
   const renderResponseDetails = () => {
     if (!fullResponse || typeof fullResponse !== 'object') return null;
   
@@ -457,9 +330,6 @@ export default function Message({ message, isLast }) {
         
         {/* Render Kompose task result */}
         {isKomposeTaskResult && renderKomposeTaskResult()}
-        
-        {/* Render regular cards for other responses */}
-        {!isKomposeTaskResult && renderResponseCards()}
       </div>
     </motion.div>
   );

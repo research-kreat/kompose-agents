@@ -42,7 +42,7 @@ export const api = {
    */
   analyzeBlock: async ({ message, userId, blockId = null }) => {
     // Determine the endpoint based on whether this is a new block or existing one
-    const endpoint = blockId ? '/analysis_of_block' : '/analyze';
+    const endpoint = blockId ? '/analyze_block' : '/analyze';
     
     // Prepare request body
     const requestBody = blockId 

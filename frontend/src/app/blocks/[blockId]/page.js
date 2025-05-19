@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Header from '@/components/ui/Header';
 import BlockSidebar from '@/components/ui/BlockSidebar';
@@ -7,8 +8,11 @@ import BlockChatInterface from '@/components/ui/BlockChatInterface';
 import InfoPanel from '@/components/ui/InfoPanel';
 import { useChatStore } from '@/store/chatStore';
 
-export default function BlockPage({ params }) {
-  const { blockId } = params;
+export default function BlockPage() {
+  // Use the useParams hook to get blockId properly
+  const params = useParams();
+  const blockId = params?.blockId || null;
+  
   const [showSidebar, setShowSidebar] = useState(true);
   const [showInfoPanel, setShowInfoPanel] = useState(false);
   

@@ -12,7 +12,6 @@ import InfoPanel from '@/components/ui/InfoPanel';
 
 export default function KomposeChat() {
   const [isClient, setIsClient] = useState(false);
-  const messagesEndRef = useRef(null);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showInfoPanel, setShowInfoPanel] = useState(false);
   
@@ -63,13 +62,6 @@ export default function KomposeChat() {
       // No need to reset store on unmount, as we want to persist state
     };
   }, []);
-
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messageHistory, isTyping]);
 
   // Handle sending a message
   const handleSendMessage = async (content) => {
@@ -273,9 +265,6 @@ export default function KomposeChat() {
               
               {/* Typing indicator */}
               {isTyping && <TypingIndicator />}
-              
-              {/* Invisible element for scrolling */}
-              <div ref={messagesEndRef} />
             </div>
             
             {/* Info panel */}

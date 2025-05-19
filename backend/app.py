@@ -112,8 +112,8 @@ def analyze_message():
         "response": response
     })
 
-@app.route('/api/analysis_of_block', methods=['POST'])
-def analyze_existing_block():
+@app.route('/api/analyze_block', methods=['POST'])
+def analyze_block():
     """
     Endpoint for continuing conversation with an existing block
     """

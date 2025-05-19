@@ -218,7 +218,7 @@ class KomposeBlockHandler(BaseBlockHandler):
                 }}
             }}
             
-            For Growth Potential, use emoji indicators like ⬆️ (High), ➡️ (Medium), ⬇️ (Low). For Competition Level, use 🔴 (High), 🟡 (Medium), 🟢 (Low). For Opportunity Score, use a scale of 1-10.
+            For Growth Potential, use text indicators like "High", "Medium", "Low". For Competition Level, use "High", "Medium", "Low". For Opportunity Score, use a scale of 1-10.
             """,
             agent=kompose_agent,
             expected_output="JSON with Market Opportunity Grid"
@@ -240,7 +240,7 @@ class KomposeBlockHandler(BaseBlockHandler):
                 }}
             }}
             
-            Group trends by categories like "Consumer Behavior", "Technology", "Delivery", etc. For Impact, use emoji indicators like 🔥 (High), 🔶 (Medium), 🟦 (Low). For Adoption Rate, use percentages. For Relevance, use terms like "Critical", "Important", "Standard", "Differentiator", "Innovative".
+            Group trends by categories like "Consumer Behavior", "Technology", "Delivery", etc. For Impact, use text indicators like "High", "Medium", "Low". For Adoption Rate, use percentages. For Relevance, use terms like "Critical", "Important", "Standard", "Differentiator", "Innovative".
             """,
             agent=kompose_agent,
             expected_output="JSON with Market Trends Heat Map"
@@ -319,12 +319,12 @@ class KomposeBlockHandler(BaseBlockHandler):
                 "matrix_data": {{
                     "Driver Type": ["Driver 1", "Driver 2", "Driver 3", "Driver 4", "Driver 5"],
                     "Impact": ["High", "High", "High", "Medium", "Medium"],
-                    "Trend": ["⬆️ Rising", "⬆️ Rising", "⬆️ Rising", "⬆️ Rising", "⬆️ Rising"],
+                    "Trend": ["Rising", "Rising", "Rising", "Rising", "Rising"],
                     "Time Horizon": ["Short Term", "Immediate", "Short Term", "Medium Term", "Long Term"]
                 }}
             }}
             
-            Identify key growth drivers relevant to the business, their impact (High, Medium, Low), trend direction (⬆️ Rising, ➡️ Stable, ⬇️ Declining), and time horizon for realization (Immediate, Short Term, Medium Term, Long Term).
+            Identify key growth drivers relevant to the business, their impact (High, Medium, Low), trend direction (Rising, Stable, Declining), and time horizon for realization (Immediate, Short Term, Medium Term, Long Term).
             """,
             agent=kompose_agent,
             expected_output="JSON with Growth Drivers Matrix"
@@ -339,14 +339,14 @@ class KomposeBlockHandler(BaseBlockHandler):
             {{
                 "matrix_data": {{
                     "Investor Type": ["VCs", "Strategic Investors", "Private Equity"],
-                    "Recent Investments": ["$2.1B (Last 12 months)", "$3.2B (Last 12 months)", "$1.8B (Last 12 months)"],
-                    "Average Deal Size": ["$25M - $100M", "$50M - $250M", "$100M+"],
+                    "Recent Investments": ["2.1B (Last 12 months)", "3.2B (Last 12 months)", "1.8B (Last 12 months)"],
+                    "Average Deal Size": ["25M - 100M", "50M - 250M", "100M+"],
                     "Focus Areas": ["Focus Areas for VCs", "Focus Areas for Strategic Investors", "Focus Areas for Private Equity"],
-                    "Trends": ["⬆️ Increasing", "⬆️ Increasing", "➡️ Stable"]
+                    "Trends": ["Increasing", "Increasing", "Stable"]
                 }}
             }}
             
-            For Focus Areas, list 3 key focus areas for each investor type as bullet points with line breaks (e.g., "• Tech Integration<br>• Supply Chain<br>• Customer Analytics"). For Trends, use emoji indicators (⬆️ Increasing, ➡️ Stable, ⬇️ Declining).
+            For Focus Areas, list 3 key focus areas for each investor type as bullet points with line breaks (e.g., "• Tech Integration<br>• Supply Chain<br>• Customer Analytics"). For Trends, use text indicators (Increasing, Stable, Declining).
             """,
             agent=kompose_agent,
             expected_output="JSON with Investment Landscape Matrix"
@@ -364,11 +364,11 @@ class KomposeBlockHandler(BaseBlockHandler):
                     "Current Market Solutions": ["Multiple Solutions Available", "Limited Quick-Commerce Solutions", "Emerging Solutions", "Few Specialized Solutions", "Custom Development Needed"],
                     "Gap Analysis": ["Medium Gap", "High Gap", "High Gap", "Very High Gap", "High Gap"],
                     "Implementation Complexity": ["Medium", "High", "High", "Very High", "High"],
-                    "Cost Range": ["$$$$", "$$$", "$$$", "$$$$$", "$$$$"]
+                    "Cost Range": ["150000-250000", "75000-120000", "80000-130000", "180000-270000", "100000-180000"]
                 }}
             }}
             
-            Identify the key technology components needed for the business, evaluate available market solutions, gap analysis (Low Gap, Medium Gap, High Gap, Very High Gap), implementation complexity, and cost range ($ to $$$$$).
+            Identify the key technology components needed for the business, evaluate available market solutions, gap analysis (Low Gap, Medium Gap, High Gap, Very High Gap), implementation complexity, and approximate cost ranges with realistic numerical values for each component.
             """,
             agent=kompose_agent,
             expected_output="JSON with Technology Stack Requirements"
@@ -386,11 +386,11 @@ class KomposeBlockHandler(BaseBlockHandler):
                     "Current Regulations": ["Standard Framework", "Evolving Rules", "Gig Economy Focus", "GDPR/Similar", "Standard Framework"],
                     "Future Trends": ["Increasing Oversight", "New Regulations Expected", "Stricter Controls", "Increasing Strictness", "Enhanced Protection"],
                     "Impact Level": ["Medium", "High", "High", "High", "Medium"],
-                    "Compliance Cost": ["$$", "$$$", "$$$", "$$$", "$$"]
+                    "Compliance Cost": ["40000-60000", "80000-120000", "75000-110000", "90000-130000", "40000-70000"]
                 }}
             }}
             
-            Analyze the regulatory landscape relevant to the business idea, current and future regulatory trends, potential impact levels (Low, Medium, High), and compliance costs ($ to $$$$$).
+            Analyze the regulatory landscape relevant to the business idea, current and future regulatory trends, potential impact levels (Low, Medium, High), and approximate compliance costs with numerical ranges for each aspect.
             """,
             agent=kompose_agent,
             expected_output="JSON with Regulatory Environment Matrix"
@@ -406,7 +406,7 @@ class KomposeBlockHandler(BaseBlockHandler):
                 "matrix_data": {{
                     "Component": ["Sourcing", "Storage", "Last Mile", "Returns"],
                     "Current State": ["Traditional", "Centralized", "Standard", "Complex"],
-                    "Pain Points": ["Long Lead Times", "High Costs", "Slow Delivery", "High Cost"],
+                    "Pain Points": ["Long Lead Times", "High Inventory Costs", "Slow Delivery", "High Return Rates"],
                     "Innovation Opportunities": ["AI Prediction", "Dark Stores", "Micro-Fulfillment", "Smart Solutions"],
                     "Cost Impact": ["High", "Medium", "High", "High"]
                 }}
@@ -493,14 +493,14 @@ class KomposeBlockHandler(BaseBlockHandler):
             {{
                 "matrix_data": {{
                     "Metric": ["CAC", "LTV", "AOV", "Gross Margin", "Delivery Cost"],
-                    "Industry Average": ["$25-30", "$150-200", "$45-50", "45-50%", "$8-10"],
-                    "Best in Class": ["$15-20", "$300-350", "$75-80", "60-65%", "$5-6"],
-                    "Your Potential": ["$20-25", "$250-300", "$60-65", "55-60%", "$6-7"],
+                    "Industry Average": ["25-30", "150-200", "45-50", "45-50%", "8-10"],
+                    "Best in Class": ["15-20", "300-350", "75-80", "60-65%", "5-6"],
+                    "Your Potential": ["20-25", "250-300", "60-65", "55-60%", "6-7"],
                     "Notes": ["Optimization Possible", "Higher with Quick Service", "Premium for Speed", "Efficiency Dependent", "Scale Dependent"]
                 }}
             }}
             
-            Analyze key unit economics metrics: Customer Acquisition Cost (CAC), Lifetime Value (LTV), Average Order Value (AOV), Gross Margin, Delivery Cost, and other metrics relevant to the business. Compare industry averages, best-in-class benchmarks, and potential for your business.
+            Analyze key unit economics metrics: Customer Acquisition Cost (CAC), Lifetime Value (LTV), Average Order Value (AOV), Gross Margin, Delivery Cost, and other metrics relevant to the business. Compare industry averages, best-in-class benchmarks, and potential for your business. Use numeric values without currency symbols.
             """,
             agent=kompose_agent,
             expected_output="JSON with Unit Economics Baseline"
@@ -515,14 +515,14 @@ class KomposeBlockHandler(BaseBlockHandler):
             {{
                 "matrix_data": {{
                     "Segment": ["Segment 1", "Segment 2", "Segment 3", "Combined Opportunity"],
-                    "TAM": ["$142B", "$25B", "$62B", "$229B"],
-                    "SAM": ["$42B", "$8B", "$18B", "$68B"],
-                    "SOM": ["$2.1B", "$400M", "$900M", "$3.4B"],
+                    "TAM": ["142B", "25B", "62B", "229B"],
+                    "SAM": ["42B", "8B", "18B", "68B"],
+                    "SOM": ["2.1B", "400M", "900M", "3.4B"],
                     "Growth Rate": ["21%", "32%", "27%", "26%"]
                 }}
             }}
             
-            Identify relevant market segments for the business idea, calculate Total Addressable Market (TAM), Serviceable Addressable Market (SAM), Serviceable Obtainable Market (SOM), and growth rates for each segment. Include a "Combined Opportunity" row with totals.
+            Identify relevant market segments for the business idea, calculate Total Addressable Market (TAM), Serviceable Addressable Market (SAM), Serviceable Obtainable Market (SOM), and growth rates for each segment. Include a "Combined Opportunity" row with totals. Use numeric values without currency symbols.
             """,
             agent=kompose_agent,
             expected_output="JSON with Market Size Segmentation"
@@ -540,11 +540,11 @@ class KomposeBlockHandler(BaseBlockHandler):
                     "Current Market": ["Limited", "Limited", "Limited", "Limited", "Limited"],
                     "Development Potential": ["High", "High", "Very High", "Very High", "High"],
                     "Time to Build": ["18-24 months", "12-18 months", "12-15 months", "18-24 months", "24-36 months"],
-                    "Investment Need": ["$$$$", "$$$", "$$$$$", "$$$$", "$$$$$"]
+                    "Investment Need": ["150000-250000", "80000-140000", "180000-300000", "100000-180000", "200000-350000"]
                 }}
             }}
             
-            Analyze potential competitive advantages (moats), evaluate the current market state for each moat type, development potential (Low, Medium, High, Very High), estimated time to build the moat, and required investment level ($ to $$$$$).
+            Analyze potential competitive advantages (moats), evaluate the current market state for each moat type, development potential (Low, Medium, High, Very High), estimated time to build the moat, and approximate investment needed with realistic numerical ranges for each moat type.
             """,
             agent=kompose_agent,
             expected_output="JSON with Competitive Moat Analysis"

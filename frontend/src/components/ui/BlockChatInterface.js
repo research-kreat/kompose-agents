@@ -11,7 +11,6 @@ import { getWelcomeMessage, getBlockTypeInfo } from '@/lib/blockUtils';
 
 export default function BlockChatInterface({ blockId, blockType = 'kompose' }) {
   const router = useRouter();
-  const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
   
   // Extract all state from the store
@@ -38,13 +37,6 @@ export default function BlockChatInterface({ blockId, blockType = 'kompose' }) {
       setCurrentBlockId(blockId);
     }
   }, [blockId]);
-
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messageHistory, isTyping]);
 
   useEffect(() => {
     if (blockId && userId) {
@@ -367,8 +359,6 @@ export default function BlockChatInterface({ blockId, blockType = 'kompose' }) {
         {/* Typing indicator */}
         {isTyping && <TypingIndicator />}
         
-        {/* Invisible element for scrolling */}
-        <div ref={messagesEndRef} />
       </div>
       
       <ChatInput 

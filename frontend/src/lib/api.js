@@ -13,7 +13,10 @@ export const api = {
    */
   async fetchWithErrorHandling(url, options = {}) {
     try {
-      const response = await fetch(url, options);
+      // Ensure the URL has the correct format
+      const apiUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+      
+      const response = await fetch(apiUrl, options);
       
       // Handle non-2xx responses
       if (!response.ok) {
@@ -53,7 +56,7 @@ export const api = {
           user_id: userId
         };
           
-    return api.fetchWithErrorHandling(`${API_BASE_URL}${endpoint}`, {
+    return api.fetchWithErrorHandling(`${endpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -86,7 +89,7 @@ export const api = {
       requestBody.user_prompt = userPrompt;
     }
     
-    return api.fetchWithErrorHandling(`${API_BASE_URL}/generate-kompose-idea`, {
+    return api.fetchWithErrorHandling('/generate-kompose-idea', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -105,7 +108,7 @@ export const api = {
    */
   getBlocks: async ({ userId, blockType = 'all', limit = 10 }) => {
     return api.fetchWithErrorHandling(
-      `${API_BASE_URL}/blocks?user_id=${encodeURIComponent(userId)}&type=${encodeURIComponent(blockType)}&limit=${limit}`
+      `/blocks?user_id=${encodeURIComponent(userId)}&type=${encodeURIComponent(blockType)}&limit=${limit}`
     );
   },
   
@@ -122,7 +125,7 @@ export const api = {
     }
     
     return api.fetchWithErrorHandling(
-      `${API_BASE_URL}/blocks/${encodeURIComponent(blockId)}?user_id=${encodeURIComponent(userId)}`
+      `/blocks/${encodeURIComponent(blockId)}?user_id=${encodeURIComponent(userId)}`
     );
   },
   
@@ -139,7 +142,7 @@ export const api = {
     }
     
     return api.fetchWithErrorHandling(
-      `${API_BASE_URL}/get-generation-status?block_id=${encodeURIComponent(blockId)}&user_id=${encodeURIComponent(userId)}`
+      `/get-generation-status?block_id=${encodeURIComponent(blockId)}&user_id=${encodeURIComponent(userId)}`
     );
   },
   
@@ -155,7 +158,7 @@ export const api = {
       throw new Error('Block ID and User ID are required');
     }
     
-    return api.fetchWithErrorHandling(`${API_BASE_URL}/blocks/${encodeURIComponent(blockId)}`, {
+    return api.fetchWithErrorHandling(`/blocks/${encodeURIComponent(blockId)}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json'
@@ -176,7 +179,7 @@ export const api = {
       throw new Error('Block ID and User ID are required');
     }
     
-    return api.fetchWithErrorHandling(`${API_BASE_URL}/blocks/${encodeURIComponent(blockId)}/clear`, {
+    return api.fetchWithErrorHandling(`/blocks/${encodeURIComponent(blockId)}/clear`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -200,7 +203,7 @@ export const api = {
     
     const defaultName = name || `New ${blockType.charAt(0).toUpperCase() + blockType.slice(1)} Block`;
     
-    return api.fetchWithErrorHandling(`${API_BASE_URL}/blocks/new`, {
+    return api.fetchWithErrorHandling('/blocks/new', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

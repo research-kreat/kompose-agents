@@ -5,42 +5,62 @@ import Header from '@/components/ui/Header';
 import Message from '@/components/ui/Message';
 import ChatInput from '@/components/ui/ChatInput';
 import TypingIndicator from '@/components/ui/TypingIndicator';
+import BlockSidebar from '@/components/ui/BlockSidebar';
 import { useChatStore } from '@/store/chatStore';
 import { api } from '@/lib/api';
+import InfoPanel from '@/components/ui/InfoPanel';
 
 export default function KomposeChat() {
   const [isClient, setIsClient] = useState(false);
   const messagesEndRef = useRef(null);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [showInfoPanel, setShowInfoPanel] = useState(false);
   
   // Extract necessary state from the store
   const userId = useChatStore(state => state.userId);
   const messageHistory = useChatStore(state => state.messageHistory);
   const isTyping = useChatStore(state => state.isTyping);
+  const currentBlockId = useChatStore(state => state.currentBlockId);
   const addMessage = useChatStore(state => state.addMessage);
   const addLog = useChatStore(state => state.addLog);
   const setIsTyping = useChatStore(state => state.setIsTyping);
   const setMessageHistory = useChatStore(state => state.setMessageHistory);
   const initializeUser = useChatStore(state => state.initializeUser);
   const resetStore = useChatStore(state => state.resetStore);
+  const createNewBlock = useChatStore(state => state.createNewBlock);
+  const setCurrentBlockId = useChatStore(state => state.setCurrentBlockId);
+  
+  // Handle block selection from sidebar
+  const handleBlockSelect = (blockId) => {
+    // Will be handled by the router, as BlockSidebar navigates to the block route
+  };
 
   // Prevent hydration issues
   useEffect(() => {
     setIsClient(true);
+    
     // Initialize user if needed
     initializeUser();
     
-    // Reset message history for new chat
-    setMessageHistory([
-      {
-        role: 'system',
-        content: 'Welcome to Kompose Interactive Mode. I can help you develop innovative business ideas through conversation. How would you like to start?',
-        timestamp: new Date().toISOString()
-      }
-    ]);
+    // If there's no current block, create a new one
+    if (!currentBlockId) {
+      // Reset message history for new chat
+      setMessageHistory([
+        {
+          role: 'system',
+          content: 'Welcome to Kompose Interactive Mode. I can help you develop innovative business ideas through conversation. How would you like to start?',
+          timestamp: new Date().toISOString()
+        }
+      ]);
+      
+      // Create a new block
+      const newBlockId = createNewBlock('kompose', 'Kompose Chat');
+      setCurrentBlockId(newBlockId);
+    }
     
     // Cleanup on unmount
     return () => {
-      resetStore();
+      // No need to reset store on unmount, as we want to persist state
     };
   }, []);
 
@@ -70,7 +90,8 @@ export default function KomposeChat() {
       // Call the API to get response
       const data = await api.analyzeBlock({
         message: content,
-        userId
+        userId,
+        blockId: currentBlockId
       });
       
       // Extract response content
@@ -139,25 +160,50 @@ export default function KomposeChat() {
   };
 
   // Handle clearing the chat
-  const handleClearChat = () => {
+  const handleClearChat = async () => {
     if (messageHistory.length > 1) {
       if (!confirm('Are you sure you want to clear this chat? This cannot be undone.')) {
         return;
       }
     }
 
-    setMessageHistory([
-      {
-        role: 'system',
-        content: 'Chat cleared. What business idea would you like to explore?',
-        timestamp: new Date().toISOString()
+    try {
+      // Call API to clear the chat
+      if (currentBlockId) {
+        await api.clearBlock({ blockId: currentBlockId, userId });
       }
-    ]);
-    
-    addLog({
-      type: 'system',
-      message: 'Chat cleared'
-    });
+      
+      // Reset message history
+      setMessageHistory([
+        {
+          role: 'system',
+          content: 'Chat cleared. What business idea would you like to explore?',
+          timestamp: new Date().toISOString()
+        }
+      ]);
+      
+      addLog({
+        type: 'system',
+        message: 'Chat cleared'
+      });
+    } catch (error) {
+      console.error('Error clearing chat:', error);
+      
+      addLog({
+        type: 'error',
+        message: `Error clearing chat: ${error.message}`
+      });
+    }
+  };
+  
+  // Toggle sidebar visibility
+  const toggleSidebar = () => {
+    setShowSidebar(!showSidebar);
+  };
+  
+  // Toggle info panel visibility
+  const toggleInfoPanel = () => {
+    setShowInfoPanel(!showInfoPanel);
   };
 
   if (!isClient) {
@@ -168,46 +214,83 @@ export default function KomposeChat() {
     <main className="min-h-screen flex flex-col bg-gray-100">
       <Header title="Kompose Interactive Mode" />
       
-      <div className="flex-1 flex flex-col h-[calc(100vh-72px)]">
-        <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-white">
-          <div className="flex items-center gap-3">
-            <i className="fas fa-comment text-xl text-primary"></i>
-            <h2 className="text-lg font-medium text-gray-800">Interactive Business Ideation</h2>
-          </div>
-          
-          <div className="flex gap-2">
-            <button
-              onClick={handleClearChat}
-              disabled={messageHistory.length <= 1}
-              className="p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors"
-              title="Clear Chat"
-            >
-              <i className="fas fa-trash"></i>
-            </button>
-          </div>
-        </div>
-        
-        <div className="flex-1 p-6 overflow-y-auto flex flex-col gap-4 bg-gray-50">
-          {/* Message history */}
-          {messageHistory.map((message, index) => (
-            <Message 
-              key={`${message.role}-${index}`}
-              message={message}
-              isLast={index === messageHistory.length - 1}
+      <div className="flex-1 flex h-[calc(100vh-72px)]">
+        {/* Sidebar with blocks */}
+        {showSidebar && (
+          <div className="w-64 flex-shrink-0">
+            <BlockSidebar 
+              onBlockSelect={handleBlockSelect} 
+              blockType="kompose" 
             />
-          ))}
-          
-          {/* Typing indicator */}
-          {isTyping && <TypingIndicator />}
-          
-          {/* Invisible element for scrolling */}
-          <div ref={messagesEndRef} />
-        </div>
+          </div>
+        )}
         
-        <ChatInput 
-          onSendMessage={handleSendMessage}
-          disabled={isTyping}
-        />
+        <div className="flex-1 flex flex-col">
+          <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-white">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={toggleSidebar}
+                className="p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors"
+                title={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
+              >
+                <i className={`fas fa-${showSidebar ? 'times' : 'bars'}`}></i>
+              </button>
+              
+              <i className="fas fa-comment text-xl text-primary"></i>
+              <h2 className="text-lg font-medium text-gray-800">Interactive Business Ideation</h2>
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={toggleInfoPanel}
+                className="p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors"
+                title={showInfoPanel ? "Hide Info Panel" : "Show Info Panel"}
+              >
+                <i className="fas fa-info-circle"></i>
+              </button>
+              
+              <button
+                onClick={handleClearChat}
+                disabled={messageHistory.length <= 1}
+                className="p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors"
+                title="Clear Chat"
+              >
+                <i className="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div className="flex-1 flex">
+            <div className="flex-1 p-6 overflow-y-auto flex flex-col gap-4 bg-gray-50">
+              {/* Message history */}
+              {messageHistory.map((message, index) => (
+                <Message 
+                  key={`${message.role}-${index}`}
+                  message={message}
+                  isLast={index === messageHistory.length - 1}
+                />
+              ))}
+              
+              {/* Typing indicator */}
+              {isTyping && <TypingIndicator />}
+              
+              {/* Invisible element for scrolling */}
+              <div ref={messagesEndRef} />
+            </div>
+            
+            {/* Info panel */}
+            {showInfoPanel && (
+              <div className="w-64 flex-shrink-0">
+                <InfoPanel />
+              </div>
+            )}
+          </div>
+          
+          <ChatInput 
+            onSendMessage={handleSendMessage}
+            disabled={isTyping || !currentBlockId}
+          />
+        </div>
       </div>
     </main>
   );

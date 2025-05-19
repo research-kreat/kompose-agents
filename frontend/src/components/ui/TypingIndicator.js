@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 export default function TypingIndicator() {
   return (
     <div className="flex gap-4 self-start">
-      <div className="w-9 h-9 rounded-full bg-secondary text-white flex items-center justify-center">
+      <div className="w-9 h-9 rounded-full bg-secondary text-black flex items-center justify-center">
         <i className="fas fa-robot"></i>
       </div>
       

@@ -11,7 +11,7 @@ export default function NotFoundPage({message = "The page you're looking for doe
         
         <Link 
           href="/" 
-          className="inline-block px-6 py-3 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
+          className="inline-block px-6 py-3 bg-primary text-black rounded-md hover:bg-primary-dark transition-colors"
         >
           Back to Home
         </Link>

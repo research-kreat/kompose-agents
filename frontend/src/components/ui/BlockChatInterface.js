@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Message from '@/components/ui/Message';
@@ -7,8 +7,9 @@ import ChatInput from '@/components/ui/ChatInput';
 import TypingIndicator from '@/components/ui/TypingIndicator';
 import { useChatStore } from '@/store/chatStore';
 import { api } from '@/lib/api';
+import { getWelcomeMessage, getBlockTypeInfo } from '@/lib/blockUtils';
 
-export default function BlockChatInterface({ blockType = 'general' }) {
+export default function BlockChatInterface({ blockId, blockType = 'kompose' }) {
   const router = useRouter();
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
@@ -26,11 +27,17 @@ export default function BlockChatInterface({ blockType = 'general' }) {
   const initializeUser = useChatStore(state => state.initializeUser);
   const setBlockInfo = useChatStore(state => state.setBlockInfo);
   const setMessageHistory = useChatStore(state => state.setMessageHistory);
+  const setCurrentBlockId = useChatStore(state => state.setCurrentBlockId);
 
   // Initialize user if not already set
   useEffect(() => {
     initializeUser();
-  }, [initializeUser]);
+    
+    // Set current block ID
+    if (blockId) {
+      setCurrentBlockId(blockId);
+    }
+  }, [blockId]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -40,14 +47,14 @@ export default function BlockChatInterface({ blockType = 'general' }) {
   }, [messageHistory, isTyping]);
 
   useEffect(() => {
-    if (currentBlockId && userId) {
+    if (blockId && userId) {
       // Set loading state
       setIsTyping(true);
       
       // Fetch messages for the current block
       const fetchMessages = async () => {
         try {
-          const data = await api.getBlock({ blockId: currentBlockId, userId });
+          const data = await api.getBlock({ blockId, userId });
           
           // Check if we received valid messages
           if (data.messages && Array.isArray(data.messages)) {
@@ -56,7 +63,7 @@ export default function BlockChatInterface({ blockType = 'general' }) {
               setMessageHistory([
                 {
                   role: 'system',
-                  content: "Hi",
+                  content: getWelcomeMessage(blockType),
                   timestamp: new Date().toISOString()
                 }
               ]);
@@ -109,11 +116,11 @@ export default function BlockChatInterface({ blockType = 'general' }) {
       
       fetchMessages();
     }
-  }, [currentBlockId, userId, blockType]);
+  }, [blockId, userId, blockType]);
 
   // Handle sending a message
   const handleSendMessage = async (content) => {
-    if (!currentBlockId || !content.trim()) return;
+    if (!blockId || !content.trim()) return;
   
     // Get userId from store
     const currentUserId = useChatStore.getState().userId;
@@ -141,7 +148,7 @@ export default function BlockChatInterface({ blockType = 'general' }) {
       const data = await api.analyzeBlock({
         message: content,
         userId: currentUserId,
-        blockId: blockInfo.blockId
+        blockId
       });
       
       // Extract the response content based on API response structure
@@ -160,7 +167,7 @@ export default function BlockChatInterface({ blockType = 'general' }) {
           if (data.response.classification_message) {
             // Add classification message as a separate system message
             addMessage({
-              role: 'system',
+              role: 'assistant',
               content: data.response.classification_message,
               timestamp: new Date().toISOString()
             });
@@ -171,33 +178,6 @@ export default function BlockChatInterface({ blockType = 'general' }) {
         } else {
           // Fallback to serializing the response
           responseContent = JSON.stringify(data.response, null, 2);
-        }
-        
-        // Format step data for better readability
-        Object.keys(data.response).forEach(key => {
-          if (key !== 'suggestion' && key !== 'updated_flow_status' && key !== 'classification_message') {
-            const stepData = data.response[key];
-            if (Array.isArray(stepData)) {
-              // Format arrays for better display
-              fullResponseData[key] = stepData;
-            }
-          }
-        });
-        
-        // If this is a new block with a backend ID, update the block info
-        if (data.block_id && (!blockInfo.blockId || blockInfo.blockId !== data.block_id)) {
-          setBlockInfo({
-            blockId: data.block_id,
-            type: data.block_type || blockType
-          });
-          
-          // Update the URL to use the dynamic route
-          router.replace(`/blocks/${data.block_id}`);
-          
-          addLog({
-            type: 'info',
-            message: `Identified as ${data.block_type || blockType} block (ID: ${data.block_id.substring(0, 8)}...)`
-          });
         }
       } else if (data.response && typeof data.response === 'string') {
         // For simple string responses
@@ -244,7 +224,7 @@ export default function BlockChatInterface({ blockType = 'general' }) {
 
   // Handle clearing the chat
   const handleClearChat = async () => {
-    if (!currentBlockId) return;
+    if (!blockId) return;
     
     if (messageHistory.length > 1) {
       if (!confirm('Are you sure you want to clear this chat? This cannot be undone.')) {
@@ -256,9 +236,9 @@ export default function BlockChatInterface({ blockType = 'general' }) {
     clearMessages();
     
     // Send API request to clear on server if we have a backend block ID
-    if (blockInfo.blockId) {
+    if (blockId) {
       try {
-        await api.clearBlock({ blockId: blockInfo.blockId, userId });
+        await api.clearBlock({ blockId, userId });
         addLog({
           type: 'system',
           message: 'Chat cleared'
@@ -279,15 +259,14 @@ export default function BlockChatInterface({ blockType = 'general' }) {
 
   // Handle exporting the chat
   const handleExportChat = () => {
-    if (!currentBlockId || messageHistory.length === 0) {
+    if (!blockId || messageHistory.length === 0) {
       alert('No messages to export');
       return;
     }
     
     // Create export object
     const exportData = {
-      block_id: currentBlockId,
-      backend_block_id: blockInfo.blockId,
+      block_id: blockId,
       block_type: blockInfo.type || blockType,
       messages: messageHistory,
       exported_at: new Date().toISOString(),
@@ -302,7 +281,7 @@ export default function BlockChatInterface({ blockType = 'general' }) {
     
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Kompose-chat-${currentBlockId.substring(0, 8)}-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `Kompose-chat-${blockId.substring(0, 8)}-${new Date().toLocaleString().replace(/[/\\:*?"<>|]/g, '-')}.json`;
     
     // Trigger download
     document.body.appendChild(a);
@@ -330,7 +309,7 @@ export default function BlockChatInterface({ blockType = 'general' }) {
   // Get block title based on type
   const getBlockTitle = () => {
     const titles = {
-      kompose: 'Bussiness Development',
+      kompose: 'Business Development',
     };
     
     return titles[blockType] || 'Kompose Assistant';
@@ -342,9 +321,9 @@ export default function BlockChatInterface({ blockType = 'general' }) {
         <div className="flex items-center gap-3">
           <i className={`fas ${getBlockIcon()} text-xl text-primary`}></i>
           <h2 className="text-lg font-medium text-gray-800">{getBlockTitle()}</h2>
-          {blockInfo.blockId && (
+          {blockId && (
             <span className="text-xs bg-gray-100 px-2 py-1 rounded-full text-gray-600">
-              {blockInfo.blockId.substring(0, 8)}...
+              {blockId.substring(0, 8)}...
             </span>
           )}
         </div>
@@ -352,7 +331,7 @@ export default function BlockChatInterface({ blockType = 'general' }) {
         <div className="flex gap-2">
           <button
             onClick={handleExportChat}
-            disabled={!currentBlockId || messageHistory.length === 0}
+            disabled={!blockId || messageHistory.length === 0}
             className="p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors"
             title="Export Conversation"
           >
@@ -361,7 +340,7 @@ export default function BlockChatInterface({ blockType = 'general' }) {
           
           <button
             onClick={handleClearChat}
-            disabled={!currentBlockId || messageHistory.length === 0}
+            disabled={!blockId || messageHistory.length === 0}
             className="p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors"
             title="Clear Chat"
           >
@@ -394,7 +373,7 @@ export default function BlockChatInterface({ blockType = 'general' }) {
       
       <ChatInput 
         onSendMessage={handleSendMessage}
-        disabled={!currentBlockId || isTyping}
+        disabled={!blockId || isTyping}
       />
     </div>
   );

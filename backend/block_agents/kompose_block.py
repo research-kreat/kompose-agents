@@ -52,8 +52,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             PART 1: A brief, conversational message that acknowledges their interest in startup ideas
             or business approaches. Keep it friendly and enthusiastic.
             
-            PART 2: A suggestion asking if they would like to generate a business idea
-            or if they'd like to upload business data for analysis.
+            PART 2: A suggestion asking if they would like to generate a business idea.
             
             FORMAT:
             {{
@@ -85,7 +84,7 @@ class KomposeBlockHandler(BaseBlockHandler):
                     if "classification_message" not in result_data:
                         result_data["classification_message"] = "Thanks for your interest in developing a startup idea! I can help you generate innovative business concepts and structured approaches."
                     if "suggestion" not in result_data:
-                        result_data["suggestion"] = "Would you like me to generate a business idea for you, or would you prefer to upload business data for analysis?"
+                        result_data["suggestion"] = "Would you like me to generate a business idea for you?"
                     
                     return result_data
                 except json.JSONDecodeError:
@@ -94,7 +93,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             # Fallback if JSON parsing fails
             return {
                 "classification_message": "Thanks for your interest in developing a startup idea! I can help you generate innovative business concepts and structured approaches.",
-                "suggestion": "Would you like me to generate a business idea for you, or would you prefer to upload business data for analysis?"
+                "suggestion": "Would you like me to generate a business idea for you?"
             }
         except Exception as e:
             logger.error(f"Error initializing kompose block: {str(e)}")
@@ -102,7 +101,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             # Fallback response
             return {
                 "classification_message": "Thanks for your interest in developing a startup idea! I can help you generate innovative business concepts and structured approaches.",
-                "suggestion": "Would you like me to generate a business idea for you, or would you prefer to upload business data for analysis?"
+                "suggestion": "Would you like me to generate a business idea for you?"
             }
     
     def process_message(self, user_message, flow_status):
@@ -132,9 +131,6 @@ class KomposeBlockHandler(BaseBlockHandler):
         """
         Generate a complete business idea with all 18 tasks
         
-        Args:
-            data: Optional data from uploaded files
-            
         Returns:
             list: Results from all tasks
         """

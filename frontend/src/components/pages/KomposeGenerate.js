@@ -1,20 +1,26 @@
 // frontend/src/components/pages/KomposeGenerate.js
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/ui/Header';
 import { useChatStore } from '@/store/chatStore';
 import { api } from '@/lib/api';
 import Message from '@/components/ui/Message';
 import TypingIndicator from '@/components/ui/TypingIndicator';
+import { getKomposeTasks, formatTaskResult } from '@/lib/blockUtils';
 
 export default function KomposeGenerate() {
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
   const [results, setResults] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
+  const [userPrompt, setUserPrompt] = useState('');
+  const [generationId, setGenerationId] = useState(null);
   const messagesEndRef = useRef(null);
+  
+  // Get all tasks
+  const allTasks = getKomposeTasks();
   
   // Extract state from the store
   const userId = useChatStore(state => state.userId);
@@ -27,28 +33,6 @@ export default function KomposeGenerate() {
   const setBlockInfo = useChatStore(state => state.setBlockInfo);
   const currentBlockId = useChatStore(state => state.currentBlockId);
   
-  // Task titles matching the backend tasks
-  const taskTitles = [
-    "Initial Classification",
-    "Business Idea Generation",
-    "Market Analysis",
-    "Customer Segmentation",
-    "Value Proposition",
-    "Business Model",
-    "Competitor Analysis",
-    "SWOT Analysis",
-    "Marketing Strategy",
-    "Product Development Roadmap",
-    "Financial Projections",
-    "Team Structure",
-    "Go-to-Market Strategy",
-    "Risk Assessment",
-    "Technology Requirements",
-    "Scalability Plan",
-    "Legal and Regulatory Considerations",
-    "Implementation Action Plan"
-  ];
-
   // Initialize user on component mount
   useEffect(() => {
     initializeUser();
@@ -58,7 +42,7 @@ export default function KomposeGenerate() {
     setMessageHistory([
       {
         role: 'system',
-        content: 'Welcome to One-Click Business Generation! Click "Generate Business Idea" below to create a complete business concept with all 18 steps.',
+        content: 'Welcome to One-Click Business Generation! Enter a business concept prompt below to generate a complete business idea with all 18 analytical tasks.',
         timestamp: new Date().toISOString()
       }
     ]);
@@ -73,7 +57,12 @@ export default function KomposeGenerate() {
       blockId: blockId
     });
     
+    // Cleanup on unmount
+    return () => clearInterval(statusCheckInterval);
   }, []);
+  
+  // Ref for status check interval
+  const statusCheckInterval = useRef(null);
   
   // Scroll to bottom when results change
   useEffect(() => {
@@ -81,6 +70,87 @@ export default function KomposeGenerate() {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [results, isGenerating, currentStep]);
+  
+  // Function to check generation status
+  const checkGenerationStatus = async (blockId) => {
+    try {
+      const status = await api.getGenerationStatus({
+        blockId,
+        userId
+      });
+      
+      // Update current step based on tasks completed
+      if (status.tasks_completed > currentStep) {
+        setCurrentStep(status.tasks_completed);
+        
+        // If generation is complete, fetch all messages
+        if (status.status === 'complete') {
+          clearInterval(statusCheckInterval.current);
+          
+          // Fetch the block to get all messages
+          const blockData = await api.getBlock({
+            blockId,
+            userId
+          });
+          
+          // Format the messages
+          const formattedMessages = blockData.messages.map(msg => ({
+            role: msg.role,
+            content: msg.message,
+            timestamp: msg.created_at || new Date().toISOString(),
+            fullResponse: msg.result || null
+          }));
+          
+          // Update message history
+          setMessageHistory([
+            ...messageHistory.filter(msg => msg.role === 'system' || msg.role === 'user'),
+            ...formattedMessages.filter(msg => msg.role === 'assistant')
+          ]);
+          
+          // Set results
+          const taskResults = formattedMessages
+            .filter(msg => msg.fullResponse && msg.fullResponse.task_number)
+            .map(msg => formatTaskResult(msg.fullResponse));
+          
+          setResults(taskResults);
+          setIsGenerating(false);
+          
+          addLog({
+            type: 'success',
+            message: 'Generated Kompose business idea with 18 tasks'
+          });
+        }
+        
+        // If generation failed, show error
+        if (status.status === 'failed') {
+          clearInterval(statusCheckInterval.current);
+          
+          setMessageHistory([
+            ...messageHistory,
+            {
+              role: 'system',
+              content: `Error generating business idea: ${status.error || 'Unknown error'}. Please try again.`,
+              timestamp: new Date().toISOString(),
+              error: true
+            }
+          ]);
+          
+          setIsGenerating(false);
+          
+          addLog({
+            type: 'error',
+            message: `Error generating business idea: ${status.error || 'Unknown error'}`
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error checking generation status:', error);
+      addLog({
+        type: 'error',
+        message: `Error checking generation status: ${error.message}`
+      });
+    }
+  };
 
   // Generate a business idea
   const generateIdea = async () => {
@@ -97,7 +167,7 @@ export default function KomposeGenerate() {
         ...messageHistory,
         {
           role: 'user',
-          content: 'Generate a complete business idea',
+          content: userPrompt || 'Generate a complete business idea',
           timestamp: new Date().toISOString()
         },
         {
@@ -115,35 +185,18 @@ export default function KomposeGenerate() {
       // Call the API to generate the idea
       const response = await api.generateKomposeIdea({
         userId,
-        blockId: currentBlockId
+        blockId: currentBlockId,
+        userPrompt: userPrompt || undefined
       });
       
-      if (response.success && response.results) {
-        // Process each result
-        const formattedResults = response.results.map((result, index) => ({
-          role: 'assistant',
-          content: `Task ${index + 1}: ${result.task_title || taskTitles[index] || 'Task'}`,
-          timestamp: new Date().toISOString(),
-          fullResponse: result
-        }));
+      // If successful, set up status checking
+      if (response.block_id) {
+        setGenerationId(response.block_id);
         
-        // Update the message history with all results
-        setMessageHistory([
-          ...messageHistory,
-          {
-            role: 'system',
-            content: 'Business idea generated successfully! Review each section below:',
-            timestamp: new Date().toISOString()
-          },
-          ...formattedResults
-        ]);
-        
-        setResults(response.results);
-        
-        addLog({
-          type: 'success',
-          message: 'Generated Kompose business idea with 18 tasks'
-        });
+        // Set up interval to check generation status
+        statusCheckInterval.current = setInterval(() => {
+          checkGenerationStatus(response.block_id);
+        }, 2000);
       } else {
         throw new Error(response.message || 'Failed to generate business idea');
       }
@@ -165,7 +218,7 @@ export default function KomposeGenerate() {
         type: 'error',
         message: `Error generating business idea: ${error.message}`
       });
-    } finally {
+      
       setIsGenerating(false);
     }
   };
@@ -175,6 +228,11 @@ export default function KomposeGenerate() {
     if (currentBlockId) {
       router.push(`/blocks/${currentBlockId}`);
     }
+  };
+  
+  // Handle user prompt change
+  const handlePromptChange = (e) => {
+    setUserPrompt(e.target.value);
   };
 
   return (
@@ -202,11 +260,26 @@ export default function KomposeGenerate() {
             </div>
           </div>
           
+          <div className="mb-4">
+            <label htmlFor="userPrompt" className="block text-sm font-medium text-gray-700 mb-1">
+              Business Concept Prompt
+            </label>
+            <textarea
+              id="userPrompt"
+              value={userPrompt}
+              onChange={handlePromptChange}
+              placeholder="e.g., A sustainable fashion marketplace for recycled clothing, or an AI-powered health monitoring app for seniors..."
+              disabled={isGenerating}
+              className="w-full p-3 border border-gray-300 rounded-lg resize-none h-20 focus:ring-primary focus:border-primary"
+              required={true}
+            />
+          </div>
+          
           <div className="flex justify-center mb-6">
             <button
               onClick={generateIdea}
               disabled={isGenerating}
-              className={`px-6 py-3 rounded-lg text-white font-medium flex items-center gap-2 ${
+              className={`px-6 py-3 rounded-lg text-black font-medium flex items-center gap-2 border border-black cursor-pointer ${
                 isGenerating ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary hover:bg-primary-dark'
               }`}
             >
@@ -234,20 +307,52 @@ export default function KomposeGenerate() {
             )}
           </div>
           
-          {results.length > 0 && (
+          {isGenerating && (
             <div className="mb-4">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-800">Generated Business Idea</h3>
+                <h3 className="text-lg font-medium text-gray-800">Generation Progress</h3>
                 <span className="text-sm text-gray-600">
-                  {currentStep + 1} of {results.length} tasks completed
+                  {currentStep} of {allTasks.length} tasks completed
                 </span>
               </div>
               
               <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
                 <div 
                   className="bg-primary h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${((currentStep + 1) / results.length) * 100}%` }}
+                  style={{ width: `${(currentStep / allTasks.length) * 100}%` }}
                 ></div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {allTasks.map((task, index) => (
+                  <div 
+                    key={task.id}
+                    className={`p-3 border rounded-lg flex items-center gap-2 ${
+                      index < currentStep 
+                        ? 'bg-green-50 border-green-200' 
+                        : index === currentStep 
+                          ? 'bg-blue-50 border-blue-200 animate-pulse' 
+                          : 'bg-gray-50 border-gray-200'
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      index < currentStep 
+                        ? 'bg-green-500 text-black' 
+                        : index === currentStep 
+                          ? 'bg-blue-500 text-black' 
+                          : 'bg-gray-200 text-gray-500'
+                    }`}>
+                      {index < currentStep ? (
+                        <i className="fas fa-check"></i>
+                      ) : (
+                        <i className={`fas ${task.icon}`}></i>
+                      )}
+                    </div>
+                    <div className="text-sm font-medium">
+                      {task.title}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -255,13 +360,15 @@ export default function KomposeGenerate() {
         
         <div className="max-w-4xl w-full">
           {/* Message history, including results */}
-          {messageHistory.map((message, index) => (
-            <Message 
-              key={`${message.role}-${index}`}
-              message={message}
-              isLast={index === messageHistory.length - 1}
-            />
-          ))}
+          <AnimatePresence>
+            {messageHistory.map((message, index) => (
+              <Message 
+                key={`${message.role}-${index}`}
+                message={message}
+                isLast={index === messageHistory.length - 1}
+              />
+            ))}
+          </AnimatePresence>
           
           {/* Typing indicator */}
           {isGenerating && <TypingIndicator />}

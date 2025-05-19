@@ -206,7 +206,7 @@ export default function Message({ message, isLast }) {
     
     return (
       <div className="mt-4 w-full bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-primary text-white p-3 font-medium flex items-center gap-2">
+        <div className="bg-primary text-black p-3 font-medium flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
             <i className="fas fa-tasks"></i>
           </div>
@@ -346,8 +346,8 @@ export default function Message({ message, isLast }) {
     >
       <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
         role === 'user' 
-          ? 'bg-primary text-white' 
-          : 'bg-secondary text-white'
+          ? 'bg-primary text-black' 
+          : 'bg-secondary text-black'
       }`}>
         <i className={`fas ${role === 'user' ? 'fa-user' : 'fa-robot'}`}></i>
       </div>
@@ -366,7 +366,7 @@ export default function Message({ message, isLast }) {
         <div 
           className={`p-4 rounded-2xl shadow-sm ${
             role === 'user' 
-              ? 'bg-primary text-white rounded-br-none' 
+              ? 'bg-primary text-black rounded-br-none' 
               : 'bg-white text-gray-800 rounded-bl-none'
           }`}
           onClick={role === 'assistant' && fullResponse ? toggleDetails : undefined}
@@ -398,7 +398,7 @@ export default function Message({ message, isLast }) {
                 {showDetails ? 'Hide details' : 'Show details'}
               </span>
             )}
-            <span className={role === 'user' ? 'text-white/80' : 'text-gray-500'}>{formattedTime}</span>
+            <span className={role === 'user' ? 'text-black/80' : 'text-gray-500'}>{formattedTime}</span>
           </div>
         </div>
         

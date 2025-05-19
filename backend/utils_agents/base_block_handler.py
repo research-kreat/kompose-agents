@@ -35,7 +35,24 @@ class BaseBlockHandler(ABC):
         
         # Standard flow steps in the correct order
         self.flow_steps = [
-
+            "initial_classification",
+            "business_idea_generation",
+            "market_analysis",
+            "customer_segmentation",
+            "value_proposition",
+            "business_model",
+            "competitor_analysis",
+            "swot_analysis",
+            "marketing_strategy",
+            "product_development_roadmap",
+            "financial_projections",
+            "team_structure",
+            "go_to_market_strategy",
+            "risk_assessment",
+            "technology_requirements",
+            "scalability_plan",
+            "legal_and_regulatory_considerations",
+            "implementation_action_plan"
         ]
     
     def is_greeting(self, user_input):

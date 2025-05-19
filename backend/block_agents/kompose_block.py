@@ -127,24 +127,34 @@ class KomposeBlockHandler(BaseBlockHandler):
             "suggestion": "Would you like to generate a business idea using our 'Kompose Business Idea' feature? It will create a comprehensive business plan with market analysis and implementation steps."
         }
     
-    def generate_kompose_idea(self, data=None):
+    def generate_kompose_idea(self, user_prompt=None):
         """
         Generate a complete business idea with all 18 tasks
         
         Returns:
             list: Results from all tasks
         """
+        initial_user_input = ""
+        if user_prompt :
+            initial_user_input = user_prompt
+        else:
+            # Get business idea from database based on block_id
+            conversation_history = self._get_conversation_history()
+            for message in conversation_history:
+                if message.get("role") == "user":
+                    initial_user_input = message.get("content")
+                    break
+
         # Create the agent for all tasks
         kompose_agent = Agent(
-            role="Business Idea Generator",
-            goal="Generate comprehensive startup ideas and business approaches",
-            backstory="""You are an expert in business development, market analysis, 
-            and startup creation. You help entrepreneurs develop innovative business 
-            ideas with detailed implementation strategies.""",
+            role="Business Analysis Expert",
+            goal="Generate comprehensive business analysis using structured matrices",
+            backstory="""You are an expert in business analysis, market research, 
+            and startup strategy. You help entrepreneurs analyze business ideas 
+            using data-driven frameworks and structured analytical matrices.""",
             verbose=True,
             llm=self.llm
         )
-        
         # Define all 18 tasks
         tasks = []
         

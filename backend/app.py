@@ -265,7 +265,7 @@ def generate_kompose_idea():
     
     # Generate the Kompose idea
     try:
-        results = handler.generate_kompose_idea()
+        results = handler.generate_kompose_idea(user_prompt)
         
         # Store the results in history
         for i, result in enumerate(results):

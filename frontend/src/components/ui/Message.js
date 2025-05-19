@@ -21,7 +21,32 @@ export default function Message({ message, isLast }) {
     connections: "bg-cyan-50 border-cyan-200",
     classifications: "bg-sky-50 border-sky-200", 
     think_models: "bg-emerald-50 border-emerald-200",
-    suggestion: "bg-gray-50 border-gray-200"
+    suggestion: "bg-gray-50 border-gray-200",
+    // Kompose business idea task types
+    idea_name: "bg-blue-50 border-blue-200",
+    tagline: "bg-indigo-50 border-indigo-200",
+    summary: "bg-purple-50 border-purple-200",
+    market_size: "bg-pink-50 border-pink-200",
+    market_growth: "bg-red-50 border-red-200",
+    primary_segment: "bg-orange-50 border-orange-200",
+    core_value_proposition: "bg-yellow-50 border-yellow-200",
+    revenue_model: "bg-green-50 border-green-200",
+    direct_competitors: "bg-teal-50 border-teal-200",
+    strengths: "bg-cyan-50 border-cyan-200",
+    weaknesses: "bg-sky-50 border-sky-200", 
+    opportunities: "bg-emerald-50 border-emerald-200",
+    threats: "bg-amber-50 border-amber-200",
+    brand_positioning: "bg-lime-50 border-lime-200",
+    mvp_features: "bg-green-50 border-green-200",
+    startup_costs: "bg-teal-50 border-teal-200",
+    founding_team: "bg-cyan-50 border-cyan-200",
+    launch_strategy: "bg-sky-50 border-sky-200", 
+    market_risks: "bg-emerald-50 border-emerald-200",
+    core_technologies: "bg-amber-50 border-amber-200",
+    growth_drivers: "bg-lime-50 border-lime-200",
+    business_structure: "bg-green-50 border-green-200",
+    strategic_partners: "bg-teal-50 border-teal-200",
+    months_1_3: "bg-cyan-50 border-cyan-200"
   };
 
   // Icons for different content types
@@ -38,7 +63,32 @@ export default function Message({ message, isLast }) {
     connections: "fa-network-wired",
     classifications: "fa-sitemap",
     think_models: "fa-brain",
-    suggestion: "fa-comment"
+    suggestion: "fa-comment",
+    // Kompose business idea task icons
+    idea_name: "fa-lightbulb",
+    tagline: "fa-quote-left",
+    summary: "fa-file-alt",
+    market_size: "fa-chart-pie",
+    market_growth: "fa-chart-line",
+    primary_segment: "fa-users",
+    core_value_proposition: "fa-award",
+    revenue_model: "fa-money-bill-wave",
+    direct_competitors: "fa-chess",
+    strengths: "fa-plus-circle",
+    weaknesses: "fa-minus-circle", 
+    opportunities: "fa-door-open",
+    threats: "fa-exclamation-triangle",
+    brand_positioning: "fa-bullseye",
+    mvp_features: "fa-list-check",
+    startup_costs: "fa-coins",
+    founding_team: "fa-user-friends",
+    launch_strategy: "fa-rocket", 
+    market_risks: "fa-skull-crossbones",
+    core_technologies: "fa-microchip",
+    growth_drivers: "fa-seedling",
+    business_structure: "fa-building",
+    strategic_partners: "fa-handshake",
+    months_1_3: "fa-calendar"
   };
   
   // Nice human-readable labels for each key
@@ -55,7 +105,32 @@ export default function Message({ message, isLast }) {
     connections: "Connections",
     classifications: "Classifications",
     think_models: "Thinking Models",
-    suggestion: "Suggestion"
+    suggestion: "Suggestion",
+    // Kompose business idea task labels
+    idea_name: "Business Idea Name",
+    tagline: "Tagline",
+    summary: "Summary",
+    market_size: "Market Size",
+    market_growth: "Market Growth",
+    primary_segment: "Primary Customer Segment",
+    core_value_proposition: "Value Proposition",
+    revenue_model: "Revenue Model",
+    direct_competitors: "Direct Competitors",
+    strengths: "Strengths",
+    weaknesses: "Weaknesses", 
+    opportunities: "Opportunities",
+    threats: "Threats",
+    brand_positioning: "Brand Positioning",
+    mvp_features: "MVP Features",
+    startup_costs: "Startup Costs",
+    founding_team: "Founding Team",
+    launch_strategy: "Launch Strategy", 
+    market_risks: "Market Risks",
+    core_technologies: "Core Technologies",
+    growth_drivers: "Growth Drivers",
+    business_structure: "Business Structure",
+    strategic_partners: "Strategic Partners",
+    months_1_3: "First 3 Months Plan"
   };
   
   // Scroll into view if it's the last message
@@ -129,15 +204,98 @@ export default function Message({ message, isLast }) {
     }
   };
   
-  // Check if response needs to display classification message and suggestion separately
-  const hasClassificationMessage = fullResponse && fullResponse.classification_message && fullResponse.display_separately;
+  // Check if this is a Kompose task result message
+  const isKomposeTaskResult = 
+    fullResponse && 
+    fullResponse.task_number && 
+    fullResponse.task_title;
   
-  // Check if response has a step just completed indicator
-  const justCompletedStep = fullResponse && fullResponse.current_step_completed;
+  // Special rendering for system messages
+  if (role === 'system') {
+    return (
+      <motion.div 
+        ref={messageRef}
+        className="self-center max-w-[80%]"
+        initial="hidden"
+        animate="visible"
+        variants={variants}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="p-4 rounded-md bg-gray-200 text-gray-800 text-center">
+          <p>{content}</p>
+        </div>
+      </motion.div>
+    );
+  }
   
-  // Render response cards for assistant messages
+  // Render Kompose task result
+  const renderKomposeTaskResult = () => {
+    if (!isKomposeTaskResult) return null;
+    
+    return (
+      <div className="mt-4 w-full bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-primary text-white p-3 font-medium flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+            <i className="fas fa-tasks"></i>
+          </div>
+          <div>
+            Task {fullResponse.task_number}: {fullResponse.task_title}
+          </div>
+        </div>
+        
+        <div className="p-4 space-y-4">
+          {/* Render each key in the task result */}
+          {Object.keys(fullResponse).filter(key => 
+            key !== 'task_number' && 
+            key !== 'task_title' && 
+            key !== 'error' &&
+            key !== 'raw_result'
+          ).map(key => (
+            <div 
+              key={key}
+              className={`p-3 rounded-lg border ${cardStyles[key] || 'bg-gray-50 border-gray-200'}`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${cardStyles[key]?.replace('bg-', 'bg-').replace('border-', 'text-') || 'bg-gray-200 text-gray-600'}`}>
+                  <i className={`fas ${cardIcons[key] || 'fa-file-alt'} text-sm`}></i>
+                </div>
+                <h4 className="font-medium text-gray-800">{keyLabels[key] || key}</h4>
+              </div>
+              
+              <div className="pl-8">
+                {typeof fullResponse[key] === 'string' ? (
+                  <div dangerouslySetInnerHTML={{ __html: formatMessageContent(fullResponse[key]) }} />
+                ) : Array.isArray(fullResponse[key]) ? (
+                  formatListItems(fullResponse[key])
+                ) : typeof fullResponse[key] === 'object' ? (
+                  <div className="space-y-3">
+                    {Object.keys(fullResponse[key]).map(subKey => (
+                      <div key={subKey} className="mb-2">
+                        <div className="font-medium text-sm text-gray-700 mb-1">{subKey}:</div>
+                        {typeof fullResponse[key][subKey] === 'string' ? (
+                          <div dangerouslySetInnerHTML={{ __html: formatMessageContent(fullResponse[key][subKey]) }} />
+                        ) : Array.isArray(fullResponse[key][subKey]) ? (
+                          formatListItems(fullResponse[key][subKey])
+                        ) : (
+                          <div className="pl-4 text-gray-700">{JSON.stringify(fullResponse[key][subKey])}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div dangerouslySetInnerHTML={{ __html: formatMessageContent(String(fullResponse[key])) }} />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+  
+  // Render response cards for regular assistant messages
   const renderResponseCards = () => {
-    if (role !== 'assistant' || !fullResponse || typeof fullResponse !== 'object') {
+    if (role !== 'assistant' || !fullResponse || typeof fullResponse !== 'object' || isKomposeTaskResult) {
       return null;
     }
     
@@ -201,24 +359,6 @@ export default function Message({ message, isLast }) {
     );
   };
   
-  // Special rendering for system messages
-  if (role === 'system') {
-    return (
-      <motion.div 
-        ref={messageRef}
-        className="self-center max-w-[80%]"
-        initial="hidden"
-        animate="visible"
-        variants={variants}
-        transition={{ duration: 0.3 }}
-      >
-        <div className="p-4 rounded-md bg-gray-200 text-gray-800 text-center">
-          <p>{content}</p>
-        </div>
-      </motion.div>
-    );
-  }
-  
   return (
     <motion.div 
       ref={messageRef}
@@ -234,15 +374,15 @@ export default function Message({ message, isLast }) {
     >
       <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
         role === 'user' 
-          ? 'bg-primary text-black' 
-          : 'bg-secondary text-black'
+          ? 'bg-primary text-white' 
+          : 'bg-secondary text-white'
       }`}>
         <i className={`fas ${role === 'user' ? 'fa-user' : 'fa-robot'}`}></i>
       </div>
       
       <div className="flex flex-col items-start max-w-full">
         {/* Classification message if it exists and should be displayed separately */}
-        {hasClassificationMessage && (
+        {fullResponse && fullResponse.classification_message && fullResponse.display_separately && (
           <div className="p-4 mb-2 rounded-2xl bg-blue-50 text-gray-800 rounded-bl-none">
             <div 
               dangerouslySetInnerHTML={{ __html: formatMessageContent(fullResponse.classification_message) }} 
@@ -254,43 +394,28 @@ export default function Message({ message, isLast }) {
         <div 
           className={`p-4 rounded-2xl shadow-sm ${
             role === 'user' 
-              ? 'bg-primary text-black rounded-br-none' 
+              ? 'bg-primary text-white rounded-br-none' 
               : 'bg-white text-gray-800 rounded-bl-none'
           }`}
           onClick={role === 'assistant' && fullResponse ? toggleDetails : undefined}
         >
-          {(!fullResponse || 
-            (Object.keys(fullResponse).every(key => 
-              key === 'updated_flow_status' || 
-              key === 'classification_message' ||
-              key === 'identified_as' ||
-              key === 'current_step' ||
-              key === 'current_step_completed' ||
-              key === 'display_separately'
-            ) && !hasClassificationMessage)
-          ) ? (
-            <div 
-              dangerouslySetInnerHTML={{ __html: formatMessageContent(content) }} 
-              className="message-content"
-            />
-          ) : (
-            <div className="message-content">
-              {/* For assistant messages with fullResponse, show suggestion in the bubble */}
-              {role === 'assistant' && fullResponse.suggestion && (
-                <div dangerouslySetInnerHTML={{ __html: formatMessageContent(fullResponse.suggestion) }} />
-              )}
-              
-              {/* For assistant messages without suggestion, show the regular content */}
-              {role === 'assistant' && !fullResponse.suggestion && (
-                <div dangerouslySetInnerHTML={{ __html: formatMessageContent(content) }} />
-              )}
-              
-              {/* Always show user content */}
-              {role === 'user' && (
-                <div dangerouslySetInnerHTML={{ __html: formatMessageContent(content) }} />
-              )}
-            </div>
-          )}
+          {/* Message content */}
+          <div className="message-content">
+            {/* For assistant messages with fullResponse, show suggestion in the bubble */}
+            {role === 'assistant' && fullResponse?.suggestion && (
+              <div dangerouslySetInnerHTML={{ __html: formatMessageContent(fullResponse.suggestion) }} />
+            )}
+            
+            {/* For assistant messages without suggestion, show the regular content */}
+            {role === 'assistant' && !fullResponse?.suggestion && (
+              <div dangerouslySetInnerHTML={{ __html: formatMessageContent(content) }} />
+            )}
+            
+            {/* Always show user content */}
+            {role === 'user' && (
+              <div dangerouslySetInnerHTML={{ __html: formatMessageContent(content) }} />
+            )}
+          </div>
           
           {/* Show response details if toggled and available */}
           {showDetails && renderResponseDetails()}
@@ -301,12 +426,15 @@ export default function Message({ message, isLast }) {
                 {showDetails ? 'Hide details' : 'Show details'}
               </span>
             )}
-            <span className={role === 'user' ? 'text-black' : 'text-gray-500'}>{formattedTime}</span>
+            <span className={role === 'user' ? 'text-white/80' : 'text-gray-500'}>{formattedTime}</span>
           </div>
         </div>
         
-        {/* Render cards for response data */}
-        {role === 'assistant' && renderResponseCards()}
+        {/* Render Kompose task result */}
+        {isKomposeTaskResult && renderKomposeTaskResult()}
+        
+        {/* Render regular cards for other responses */}
+        {!isKomposeTaskResult && renderResponseCards()}
       </div>
     </motion.div>
   );

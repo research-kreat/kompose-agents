@@ -8,14 +8,7 @@ export default function InfoPanel() {
   // Get the block type label
   const getBlockTypeLabel = () => {
     const typeLabels = {
-      idea: 'Idea Development',
-      problem: 'Problem Definition',
-      possibility: 'Possibility Explorer',
-      moonshot: 'Moonshot Ideation',
-      needs: 'Needs Analysis',
-      opportunity: 'Opportunity Assessment',
-      concept: 'Concept Development',
-      outcome: 'Outcome Evaluation',
+      kompose: 'Kompose Business Generator',
       general: 'General Assistant'
     };
     

@@ -10,16 +10,7 @@ import json
 from helpers.global_helper import sanitize_response
 
 # Import our block handlers
-from block_agents.idea_block import IdeaBlockHandler
-from block_agents.problem_block import ProblemBlockHandler
-from block_agents.possibility_block import PossibilityBlockHandler
-from block_agents.concept_block import ConceptBlockHandler
-from block_agents.needs_block import NeedsBlockHandler
-from block_agents.opportunity_block import OpportunityBlockHandler
-from block_agents.outcome_block import OutcomeBlockHandler
-from block_agents.moonshot_block import MoonshotBlockHandler
-from utils_agents.block_classifier import classify_user_input
-
+from block_agents.kompose_block import KomposeBlockHandler
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -34,7 +25,7 @@ CORS(app)
 
 # MongoDB configuration
 MONGO_URI = os.getenv("MONGO_URI")
-MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
+MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "KomposeAgentic")
 client = MongoClient(MONGO_URI)
 db = client[MONGO_DB_NAME]
 
@@ -45,15 +36,7 @@ blocks_collection = db.blocks
 
 # Block handler mapping
 block_handlers = {
-    "idea": IdeaBlockHandler,
-    "problem": ProblemBlockHandler,
-    "possibility": PossibilityBlockHandler,
-    "concept": ConceptBlockHandler,
-    "needs": NeedsBlockHandler,
-    "opportunity": OpportunityBlockHandler,
-    "outcome": OutcomeBlockHandler,
-    "moonshot": MoonshotBlockHandler,
-    "general": IdeaBlockHandler  # Use IdeaBlockHandler for general chat as fallback
+    "kompose": KomposeBlockHandler
 }
 
 # Standard flow steps for all block types in the correct order
@@ -75,7 +58,7 @@ STANDARD_FLOW_STEPS = [
 @app.route('/api/analyze', methods=['POST'])
 def analyze_general_chat():
     """
-    Endpoint for general chat that classifies the input and creates a new block
+    Endpoint for general chat that creates a new block
     """
     data = request.json
     user_id = data.get('user_id')
@@ -86,14 +69,6 @@ def analyze_general_chat():
     # Get user input
     user_input = data.get('message', '')
     
-    # Classify the user input
-    try:
-        block_type, confidence, is_greeting, classification_message = classify_user_input(user_input)
-    except ValueError as e:
-        # Handle case where classifier returns old format (without classification_message)
-        block_type, confidence, is_greeting = classify_user_input(user_input)
-        classification_message = f"Great! I've identified this as a {block_type} type. Let's explore it further."
-    
     # Create a new block ID
     block_id = str(uuid.uuid4())
     
@@ -101,7 +76,7 @@ def analyze_general_chat():
     flow_status = {
         "user_id": user_id,
         "block_id": block_id,
-        "block_type": block_type,
+        "block_type": "kompose",
         "initial_input": user_input,
         "flow_status": {step: False for step in STANDARD_FLOW_STEPS},
         "created_at": datetime.utcnow(),
@@ -125,75 +100,68 @@ def analyze_general_chat():
     blocks_collection.insert_one({
         "block_id": block_id,
         "user_id": user_id,
-        "type": block_type,
-        "name": f"New {block_type.capitalize()} Block",
+        "type": "kompose",
+        "name": "New Kompose Block",
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     })
     
-    # Initialize appropriate handler
-    if block_type in block_handlers:
-        handler_class = block_handlers[block_type]
-        handler = handler_class(db, block_id, user_id)
-        
-        # Get initial response
-        response = handler.initialize_block(user_input)
-        
-        # Sanitize response to ensure plain text
-        response = sanitize_response(response)
-        
-        # If it's identified as a greeting, we need to handle it differently
-        if response.get("identified_as") == "greeting":
-            greeting_message = response.get("greeting_response")
-            
-            # Store assistant response in history
-            history_collection.insert_one({
-                "user_id": user_id,
-                "block_id": block_id,
-                "role": "assistant",
-                "message": greeting_message,
-                "result": response,
-                "created_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow()
-            })
-            
-            return jsonify({
-                "block_id": block_id,
-                "block_type": block_type,
-                "confidence": confidence,
-                "response": {
-                    "suggestion": greeting_message
-                }
-            })
-        else:
-            # For non-greeting messages, use the classification and suggestion directly
-            suggestion = response.get("suggestion", "")
-            classification_msg = response.get("classification_message", "")
-            
-            # Store assistant response in history
-            history_collection.insert_one({
-                "user_id": user_id,
-                "block_id": block_id,
-                "role": "assistant",
-                "message": f"{classification_msg}\n\n{suggestion}",
-                "result": response,
-                "created_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow()
-            })
-            
-            # Following the standard flow, first message is classification and suggestion
-            return jsonify({
-                "block_id": block_id,
-                "block_type": block_type,
-                "confidence": confidence,
-                "response": {
-                    "suggestion": suggestion,
-                    "classification_message": classification_msg
-                }
-            })
-    else:
-        return jsonify({'error': f'Unsupported block type: {block_type}'}), 400
+    # Initialize kompose handler
+    handler = KomposeBlockHandler(db, block_id, user_id)
     
+    # Get initial response
+    response = handler.initialize_block(user_input)
+    
+    # Sanitize response to ensure plain text
+    response = sanitize_response(response)
+    
+    # If it's identified as a greeting, we need to handle it differently
+    if response.get("identified_as") == "greeting":
+        greeting_message = response.get("greeting_response")
+        
+        # Store assistant response in history
+        history_collection.insert_one({
+            "user_id": user_id,
+            "block_id": block_id,
+            "role": "assistant",
+            "message": greeting_message,
+            "result": response,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        })
+        
+        return jsonify({
+            "block_id": block_id,
+            "block_type": "kompose",
+            "response": {
+                "suggestion": greeting_message
+            }
+        })
+    else:
+        # For non-greeting messages, use the classification and suggestion directly
+        classification_msg = response.get("classification_message", "")
+        suggestion = response.get("suggestion", "")
+        
+        # Store assistant response in history
+        history_collection.insert_one({
+            "user_id": user_id,
+            "block_id": block_id,
+            "role": "assistant",
+            "message": f"{classification_msg}\n\n{suggestion}",
+            "result": response,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        })
+        
+        # Return the response
+        return jsonify({
+            "block_id": block_id,
+            "block_type": "kompose",
+            "response": {
+                "suggestion": suggestion,
+                "classification_message": classification_msg
+            }
+        })
     
 @app.route('/api/analysis_of_block', methods=['POST'])
 def analyze_existing_block():
@@ -217,8 +185,6 @@ def analyze_existing_block():
     if not flow_data:
         return jsonify({'error': 'Block not found'}), 404
     
-    block_type = flow_data.get("block_type")
-    
     # Store user message in history
     history_collection.insert_one({
         "user_id": user_id,
@@ -229,110 +195,159 @@ def analyze_existing_block():
         "updated_at": datetime.utcnow()
     })
     
-    # Get appropriate handler
-    if block_type in block_handlers:
-        handler_class = block_handlers[block_type]
-        handler = handler_class(db, block_id, user_id)
+    # Get handler
+    handler = KomposeBlockHandler(db, block_id, user_id)
+    
+    # Process the message with improved history utilization
+    response = handler.process_message(user_input, flow_data["flow_status"])
+    
+    # Sanitize response to ensure plain text
+    response = sanitize_response(response)
+    
+    # If it's identified as a greeting, handle it appropriately
+    if response.get("identified_as") == "greeting":
+        greeting_message = response.get("greeting_response")
         
-        # Process the message with improved history utilization
-        response = handler.process_message(user_input, flow_data["flow_status"])
+        # Store assistant response in history
+        history_collection.insert_one({
+            "user_id": user_id,
+            "block_id": block_id,
+            "role": "assistant",
+            "message": greeting_message,
+            "result": response,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        })
         
-        # Sanitize response to ensure plain text
-        response = sanitize_response(response)
-        
-        # If it's identified as a greeting, handle it appropriately
-        if response.get("identified_as") == "greeting":
-            greeting_message = response.get("greeting_response")
-            
-            # Store assistant response in history
-            history_collection.insert_one({
-                "user_id": user_id,
-                "block_id": block_id,
-                "role": "assistant",
-                "message": greeting_message,
-                "result": response,
-                "created_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow()
-            })
-            
-            return jsonify({
-                "block_id": block_id,
-                "block_type": block_type,
-                "response": {
-                    "suggestion": greeting_message
-                }
-            })
-        else:
-            # Update flow status if needed
-            if "updated_flow_status" in response:
-                flow_collection.update_one(
-                    {"block_id": block_id, "user_id": user_id},
-                    {"$set": {
-                        "flow_status": response["updated_flow_status"],
-                        "updated_at": datetime.utcnow()
-                    }}
-                )
-                
-                # Keep a copy before removing it from response
-                updated_flow_status = response["updated_flow_status"].copy()
-                
-                # Remove internal flow status from response before sending to client
-                response.pop("updated_flow_status", None)
-            
-            # Get the suggestion for the message content
-            suggestion = response.get("suggestion", "")
-            
-            # Get the current step content if any (with improved title/abstract context)
-            current_step = None
-            for step in STANDARD_FLOW_STEPS:
-                if step in response and response[step] is not None:
-                    current_step = step
-                    # Format data for display
-                    if isinstance(response[step], (list, dict)):
-                        if isinstance(response[step], list):
-                            # Keep lists as is, without additional formatting
-                            pass
-                        elif isinstance(response[step], dict):
-                            # Format dict for display as list
-                            formatted_items = []
-                            for k, v in response[step].items():
-                                formatted_items.append(f"{k}: {v}")
-                            response[step] = formatted_items
-            
-            # Create a clean message for display
-            display_message = suggestion
-            if current_step is not None and current_step in response:
-                # If we're working with text content (title or abstract)
-                if current_step in ["title", "abstract"]:
-                    display_message = f"{response[current_step]}\n\n{suggestion}"
-                # For lists of items
-                elif isinstance(response[current_step], list):
-                    items_text = "\n".join([f"• {item}" for item in response[current_step]])
-                    display_message = f"{items_text}\n\n{suggestion}"
-                # For other data types
-                else:
-                    display_message = f"{response[current_step]}\n\n{suggestion}"
-            
-            # Store assistant response in history with full context
-            history_collection.insert_one({
-                "user_id": user_id,
-                "block_id": block_id,
-                "role": "assistant",
-                "message": display_message,
-                "result": response,
-                "created_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow()
-            })
-            
-            # Return a JSON-compatible response
-            return jsonify({
-                "block_id": block_id,
-                "block_type": block_type,
-                "response": response
-            })
+        return jsonify({
+            "block_id": block_id,
+            "block_type": "kompose",
+            "response": {
+                "suggestion": greeting_message
+            }
+        })
     else:
-        return jsonify({'error': f'Unsupported block type: {block_type}'}), 400
+        # Get the suggestion for the message content
+        suggestion = response.get("suggestion", "")
+        
+        # Store assistant response in history with full context
+        history_collection.insert_one({
+            "user_id": user_id,
+            "block_id": block_id,
+            "role": "assistant",
+            "message": suggestion,
+            "result": response,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        })
+        
+        # Return a JSON-compatible response
+        return jsonify({
+            "block_id": block_id,
+            "block_type": "kompose",
+            "response": response
+        })
 
+@app.route('/api/generate-kompose-idea', methods=['POST'])
+def generate_kompose_idea():
+    """
+    Generate a complete Kompose business idea with 18 tasks
+    """
+    data = request.json
+    user_id = data.get('user_id')
+    
+    if not user_id:
+        return jsonify({'error': 'user_id is required'}), 400
+    
+    # Create a new block ID
+    block_id = str(uuid.uuid4())
+    
+    # Initialize flow status
+    flow_status = {
+        "user_id": user_id,
+        "block_id": block_id,
+        "block_type": "kompose",
+        "initial_input": "Kompose Business Idea Generation",
+        "flow_status": {step: False for step in STANDARD_FLOW_STEPS},
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+    
+    # Store in MongoDB
+    flow_collection.insert_one(flow_status)
+    
+    # Store user message in history
+    history_collection.insert_one({
+        "user_id": user_id,
+        "block_id": block_id,
+        "role": "user",
+        "message": "Generate a Kompose business idea",
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    })
+    
+    # Store block in blocks collection
+    blocks_collection.insert_one({
+        "block_id": block_id,
+        "user_id": user_id,
+        "type": "kompose",
+        "name": "Kompose Business Idea",
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    })
+    
+    # Initialize handler
+    handler = KomposeBlockHandler(db, block_id, user_id)
+    
+    # Process any uploaded data from the client
+    uploaded_data = data.get('uploaded_data')
+    
+    # Generate the Kompose idea
+    try:
+        results = handler.generate_kompose_idea(uploaded_data)
+        
+        # Store the results in history
+        for i, result in enumerate(results):
+            # Store each task result as a separate message
+            history_collection.insert_one({
+                "user_id": user_id,
+                "block_id": block_id,
+                "role": "assistant",
+                "message": f"Task {i+1}: {json.dumps(result, indent=2)}",
+                "result": result,
+                "task_number": i + 1,
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+            })
+        
+        return jsonify({
+            "block_id": block_id,
+            "block_type": "kompose",
+            "results": results,
+            "success": True,
+            "message": "Kompose business idea generated successfully"
+        })
+    except Exception as e:
+        logger.error(f"Error generating Kompose idea: {str(e)}")
+        
+        # Store error message in history
+        history_collection.insert_one({
+            "user_id": user_id,
+            "block_id": block_id,
+            "role": "assistant",
+            "message": f"Error generating Kompose idea: {str(e)}",
+            "error": str(e),
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        })
+        
+        return jsonify({
+            "block_id": block_id,
+            "block_type": "kompose",
+            "error": str(e),
+            "success": False,
+            "message": "Error generating Kompose idea"
+        }), 500
 
 @app.route('/api/blocks', methods=['GET'])
 def get_blocks():
@@ -466,8 +481,7 @@ def create_new_block():
     """
     data = request.json
     user_id = data.get('user_id')
-    block_type = data.get('type', 'general')
-    name = data.get('name', f'New {block_type.capitalize()} Block')
+    name = data.get('name', 'New Kompose Block')
     
     if not user_id:
         return jsonify({'error': 'user_id is required'}), 400
@@ -479,7 +493,7 @@ def create_new_block():
     flow_status = {
         "user_id": user_id,
         "block_id": block_id,
-        "block_type": block_type,
+        "block_type": "kompose",
         "initial_input": "",
         "flow_status": {step: False for step in STANDARD_FLOW_STEPS},
         "created_at": datetime.utcnow(),
@@ -493,26 +507,14 @@ def create_new_block():
     blocks_collection.insert_one({
         "block_id": block_id,
         "user_id": user_id,
-        "type": block_type,
+        "type": "kompose",
         "name": name,
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     })
     
-    # Add welcome message based on block type - making it more conversational
-    welcome_messages = {
-        "idea": "Welcome! What innovative ideas would you like to explore today?",
-        "problem": "Welcome! What problem would you like to tackle today?",
-        "possibility": "Welcome! What possibilities would you like to explore today?",
-        "moonshot": "Welcome! What ambitious vision would you like to develop today?",
-        "needs": "Welcome! What needs would you like to identify today?",
-        "opportunity": "Welcome! What opportunities would you like to discover today?",
-        "concept": "Welcome! What concept would you like to develop today?",
-        "outcome": "Welcome! What outcomes would you like to evaluate today?",
-        "general": "Welcome! How can I help with your creative thinking today?"
-    }
-    
-    welcome_msg = welcome_messages.get(block_type, "Welcome! How can I assist you today?")
+    # Add welcome message
+    welcome_msg = "Welcome! I can help you generate innovative startup ideas and actionable business plans. How would you like to start?"
     
     history_collection.insert_one({
         "user_id": user_id,
@@ -525,7 +527,7 @@ def create_new_block():
     
     return jsonify({
         "block_id": block_id,
-        "block_type": block_type,
+        "block_type": "kompose",
         "name": name,
         "created_at": datetime.utcnow().isoformat()
     })

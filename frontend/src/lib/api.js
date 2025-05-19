@@ -63,6 +63,33 @@ export const api = {
   },
   
   /**
+   * Generate a Kompose business idea with 18 tasks
+   * @param {Object} params - Parameters
+   * @param {string} params.userId - User ID
+   * @param {Object} [params.uploadedData] - Optional uploaded data for analysis
+   * @returns {Promise<Object>} - Response data with all tasks results
+   */
+  generateKomposeIdea: async ({ userId, uploadedData = null }) => {
+    // Prepare request body
+    const requestBody = {
+      user_id: userId
+    };
+    
+    // Add uploaded data if provided
+    if (uploadedData) {
+      requestBody.uploaded_data = uploadedData;
+    }
+    
+    return api.fetchWithErrorHandling(`${API_BASE_URL}/generate-kompose-idea`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+  },
+  
+  /**
    * Get blocks for a user
    * @param {Object} params - Parameters
    * @param {string} params.userId - User ID
@@ -143,12 +170,12 @@ export const api = {
    * @param {string} [params.name] - Block name
    * @returns {Promise<Object>} - Response data with new block
    */
-  createBlock: async ({ userId, blockType = 'general', name = null }) => {
+  createBlock: async ({ userId, blockType = 'kompose', name = null }) => {
     if (!userId) {
       throw new Error('User ID is required');
     }
     
-    const defaultName = name || `New ${blockType.charAt(0).toUpperCase() + blockType.slice(1)} Block`;
+    const defaultName = name || `New Kompose Block`;
     
     return api.fetchWithErrorHandling(`${API_BASE_URL}/blocks/new`, {
       method: 'POST',

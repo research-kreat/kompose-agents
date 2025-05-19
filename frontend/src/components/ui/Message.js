@@ -65,20 +65,7 @@ export default function Message({ message, isLast }) {
   
   // Nice human-readable labels for each key
   const keyLabels = {
-    title: "Title",
-    abstract: "Abstract",
-    stakeholders: "Stakeholders",
-    tags: "Tags & Categories",
-    assumptions: "Assumptions",
-    constraints: "Constraints",
-    risks: "Risks",
-    areas: "Related Areas",
-    impact: "Impact",
-    connections: "Connections",
-    classifications: "Classifications",
-    think_models: "Thinking Models",
     suggestion: "Suggestion",
-    // Kompose business idea task labels
     idea_name: "Business Idea Name",
     tagline: "Tagline",
     summary: "Summary",

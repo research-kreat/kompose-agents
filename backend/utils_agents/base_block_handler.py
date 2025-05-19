@@ -33,26 +33,26 @@ class BaseBlockHandler(ABC):
             temperature=0.7
         )
         
-        # Standard flow steps in the correct order
+        # Comprehensive flow steps for business analysis
         self.flow_steps = [
             "initial_classification",
-            "business_idea_generation",
-            "market_analysis",
-            "customer_segmentation",
-            "value_proposition",
-            "business_model",
-            "competitor_analysis",
-            "swot_analysis",
-            "marketing_strategy",
-            "product_development_roadmap",
-            "financial_projections",
-            "team_structure",
-            "go_to_market_strategy",
+            "similar_business_analysis",
+            "market_opportunity_grid",
+            "market_trends_heatmap",
+            "competition_analysis",
+            "opportunity_assessment",
+            "key_success_factors",
+            "growth_drivers",
+            "investment_landscape_analysis",
+            "technology_stack_requirements",
+            "regulatory_environment",
+            "supply_chain_analysis",
+            "customer_experience_mapping",
+            "resource_requirements",
             "risk_assessment",
-            "technology_requirements",
-            "scalability_plan",
-            "legal_and_regulatory_considerations",
-            "implementation_action_plan"
+            "unit_economics_baseline",
+            "market_size_segmentation",
+            "competitive_moat_analysis"
         ]
     
     def is_greeting(self, user_input):

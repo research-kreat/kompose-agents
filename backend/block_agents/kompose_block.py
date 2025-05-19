@@ -151,14 +151,14 @@ class KomposeBlockHandler(BaseBlockHandler):
         # Task 1: Initial Business Idea Generation
         tasks.append(Task(
             description=f"""
-            Generate an innovative business idea based on current market trends and opportunities.
+            Given an business idea {initial_user_input} based on current market trends and opportunities.
             Consider the following factors:
             - Emerging market needs
             - Technological advancements
             - Potential for disruption
             - Scalability
             - Target audience
-            
+    
             The idea should be specific, feasible, and innovative.
             
             FORMAT YOUR RESPONSE AS JSON:

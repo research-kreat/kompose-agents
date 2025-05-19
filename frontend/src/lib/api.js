@@ -214,6 +214,50 @@ export const api = {
         name: defaultName
       })
     });
+  },
+  
+  /**
+   * Stream a Kompose business idea with real-time task results
+   * @param {Object} params - Parameters
+   * @param {string} params.userId - User ID
+   * @param {string} [params.userPrompt] - User prompt to guide generation
+   * @returns {ReadableStream} - Stream of task results
+   */
+  streamKomposeIdea: async ({ userId, userPrompt = null }) => {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+    
+    // Prepare request body
+    const requestBody = {
+      user_id: userId
+    };
+    
+    // Add user prompt if provided
+    if (userPrompt) {
+      requestBody.user_prompt = userPrompt;
+    }
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/stream-kompose-idea`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || `API error: ${response.status} ${response.statusText}`;
+        throw new Error(errorMessage);
+      }
+      
+      return response.body;
+    } catch (error) {
+      console.error(`API error (stream-kompose-idea):`, error);
+      throw error;
+    }
   }
 };
 

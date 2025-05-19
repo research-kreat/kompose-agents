@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import { persist } from 'zustand/middleware';
+import { api } from '@/lib/api'; // Import the API client
 
 export const useChatStore = create(
   persist(
@@ -153,35 +154,114 @@ export const useChatStore = create(
       }),
       
       // Create a new block
-      createNewBlock: (type = 'kompose', name = 'New Chat') => {
-        const blockId = uuidv4();
-        const newBlock = {
-          block_id: blockId,
-          type: type,
-          name: name,
-          created_at: new Date().toISOString()
-        };
-        
-        const { addBlock, setCurrentBlockId, setBlockInfo, resetStore } = get();
-        
-        // Reset store to clear previous chat
-        resetStore();
-        
-        // Add the new block to the list
-        addBlock(newBlock);
-        
-        // Set as current block
-        setCurrentBlockId(blockId);
-        
-        // Update block info
-        setBlockInfo({
-          created: newBlock.created_at,
-          type: type,
-          blockId: blockId,
-          messageCount: 0
-        });
-        
-        return blockId;
+      createNewBlock: async (type = 'kompose', name = 'New Chat') => {
+        try {
+          const { resetStore, addBlock, setCurrentBlockId, setBlockInfo, addLog, userId } = get();
+          
+          // Ensure user is initialized
+          const currentUserId = get().initializeUser();
+          
+          // Reset store to clear previous chat
+          resetStore();
+          
+          // First, create the block on the backend
+          const response = await api.createBlock({
+            userId: currentUserId,
+            blockType: type,
+            name: name
+          });
+          
+          // Check if we got a block from the backend
+          if (response.success && response.block && response.block.block_id) {
+            const backendBlock = response.block;
+            
+            // Add the block to the list
+            addBlock(backendBlock);
+            
+            // Set as current block
+            setCurrentBlockId(backendBlock.block_id);
+            
+            // Update block info
+            setBlockInfo({
+              created: backendBlock.created_at,
+              type: backendBlock.type,
+              blockId: backendBlock.block_id,
+              messageCount: 0
+            });
+            
+            // Add welcome message to the block
+            set({
+              messageHistory: [
+                {
+                  role: 'system',
+                  content: `Welcome to your new ${type} chat!`,
+                  timestamp: new Date().toISOString()
+                }
+              ]
+            });
+            
+            addLog({
+              type: 'success',
+              message: `Created new block: ${backendBlock.block_id.substring(0, 8)}`
+            });
+            
+            return backendBlock.block_id;
+          } else {
+            throw new Error('Failed to create block on backend');
+          }
+        } catch (error) {
+          // Fallback to creating just a local block if backend creation fails
+          console.error('Error creating block on backend:', error);
+          
+          const { addLog } = get();
+          addLog({
+            type: 'error',
+            message: `Failed to create block on backend: ${error.message}. Creating local block instead.`
+          });
+          
+          // Generate a local block ID
+          const blockId = uuidv4();
+          const newBlock = {
+            block_id: blockId,
+            type: type,
+            name: name,
+            created_at: new Date().toISOString(),
+            is_local: true // Mark this as a local block
+          };
+          
+          const { addBlock, setCurrentBlockId, setBlockInfo, resetStore } = get();
+          
+          // Reset store to clear previous chat
+          resetStore();
+          
+          // Add the new block to the list
+          addBlock(newBlock);
+          
+          // Set as current block
+          setCurrentBlockId(blockId);
+          
+          // Update block info
+          setBlockInfo({
+            created: newBlock.created_at,
+            type: type,
+            blockId: blockId,
+            messageCount: 0,
+            is_local: true
+          });
+          
+          // Add message about local-only mode
+          set({
+            messageHistory: [
+              {
+                role: 'system',
+                content: 'Created a local block. Note: This block is not synchronized with the server and will not persist across sessions.',
+                timestamp: new Date().toISOString()
+              }
+            ]
+          });
+          
+          return blockId;
+        }
       }
     }),
     {

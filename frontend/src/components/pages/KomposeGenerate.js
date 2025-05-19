@@ -1,4 +1,3 @@
-// frontend/src/components/pages/KomposeGenerate.js
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,6 +16,8 @@ export default function KomposeGenerate() {
   const [currentStep, setCurrentStep] = useState(0);
   const [userPrompt, setUserPrompt] = useState('');
   const [generationId, setGenerationId] = useState(null);
+  const [streamError, setStreamError] = useState(null);
+  const [isStreaming, setIsStreaming] = useState(false);
   
   // Get all tasks
   const allTasks = getKomposeTasks();
@@ -31,6 +32,7 @@ export default function KomposeGenerate() {
   const setMessageHistory = useChatStore(state => state.setMessageHistory);
   const setBlockInfo = useChatStore(state => state.setBlockInfo);
   const currentBlockId = useChatStore(state => state.currentBlockId);
+  const addMessage = useChatStore(state => state.addMessage);
   
   // Initialize user on component mount
   useEffect(() => {
@@ -56,158 +58,231 @@ export default function KomposeGenerate() {
       blockId: blockId
     });
     
-    // Cleanup on unmount
-    return () => clearInterval(statusCheckInterval.current);
+    return () => {
+      // Cleanup any active streams
+      if (isStreaming) {
+        cleanupStream();
+      }
+    };
   }, []);
   
-  // Ref for status check interval
-  const statusCheckInterval = useRef(null);
+  // Reference to the current reader
+  const readerRef = useRef(null);
+  const streamControllerRef = useRef(null);
   
-  // Function to check generation status
-  const checkGenerationStatus = async (blockId) => {
+  // Cleanup stream
+  const cleanupStream = () => {
+    if (readerRef.current) {
+      try {
+        readerRef.current.cancel();
+      } catch (e) {
+        console.error("Error cancelling stream:", e);
+      }
+      readerRef.current = null;
+    }
+    
+    if (streamControllerRef.current) {
+      try {
+        streamControllerRef.current.abort();
+      } catch (e) {
+        console.error("Error aborting stream:", e);
+      }
+      streamControllerRef.current = null;
+    }
+    
+    setIsStreaming(false);
+  };
+  
+  // Function to process streaming response
+  const processStreamingResponse = async (stream) => {
     try {
-      const status = await api.getGenerationStatus({
-        blockId,
-        userId
-      });
+      // Create an abort controller for the stream
+      const controller = new AbortController();
+      streamControllerRef.current = controller;
       
-      // Update current step based on tasks completed
-      if (status.tasks_completed > currentStep) {
-        setCurrentStep(status.tasks_completed);
+      // Get the reader from the stream
+      const reader = stream.getReader();
+      readerRef.current = reader;
+      
+      // Create a TextDecoder to decode the chunks
+      const decoder = new TextDecoder();
+      
+      setIsStreaming(true);
+      
+      // Read the stream
+      while (true) {
+        const { done, value } = await reader.read();
         
-        // If a new task was completed, fetch the task data
-        if (status.tasks_completed > 0) {
-          // Fetch the block to get latest messages
-          const blockData = await api.getBlock({
-            blockId,
-            userId
-          });
-          
-          // Find the message corresponding to the latest completed task
-          const taskMessages = blockData.messages.filter(msg => 
-            msg.role === 'assistant' && 
-            msg.result && 
-            msg.result.task_number === status.tasks_completed
-          );
-          
-          if (taskMessages.length > 0) {
-            const latestTaskMessage = taskMessages[0];
-            const formattedMessage = {
-              role: 'assistant',
-              content: `Task ${status.tasks_completed}: ${latestTaskMessage.result.task_title}`,
-              timestamp: latestTaskMessage.created_at || new Date().toISOString(),
-              fullResponse: latestTaskMessage.result
-            };
-            
-            // Add this message to history
-            setMessageHistory(prevMessages => [
-              ...prevMessages.filter(msg => 
-                !(msg.fullResponse && msg.fullResponse.task_number === status.tasks_completed)
-              ),
-              formattedMessage
-            ]);
-            
-            // Add to results
-            const formattedResult = formatTaskResult(latestTaskMessage.result);
-            setResults(prevResults => {
-              const existingIndex = prevResults.findIndex(r => 
-                r.taskInfo && r.taskInfo.id === status.tasks_completed
-              );
-              
-              if (existingIndex >= 0) {
-                // Replace existing result
-                const newResults = [...prevResults];
-                newResults[existingIndex] = formattedResult;
-                return newResults;
-              } else {
-                // Add new result
-                return [...prevResults, formattedResult];
-              }
-            });
-            
-            addLog({
-              type: 'success',
-              message: `Completed task ${status.tasks_completed}: ${latestTaskMessage.result.task_title}`
-            });
-          }
+        if (done) {
+          break;
         }
         
-        // If generation is complete, fetch all messages
-        if (status.status === 'complete') {
-          clearInterval(statusCheckInterval.current);
-          
-          // Fetch the block to get all messages
-          const blockData = await api.getBlock({
-            blockId,
-            userId
-          });
-          
-          // Format the messages
-          const formattedMessages = blockData.messages.map(msg => ({
-            role: msg.role,
-            content: msg.message,
-            timestamp: msg.created_at || new Date().toISOString(),
-            fullResponse: msg.result || null
-          }));
-          
-          // Update message history
-          setMessageHistory([
-            ...messageHistory.filter(msg => msg.role === 'system' || msg.role === 'user'),
-            ...formattedMessages.filter(msg => msg.role === 'assistant')
-          ]);
-          
-          // Set results
-          const taskResults = formattedMessages
-            .filter(msg => msg.fullResponse && msg.fullResponse.task_number)
-            .map(msg => formatTaskResult(msg.fullResponse));
-          
-          setResults(taskResults);
-          setIsGenerating(false);
-          
-          addLog({
-            type: 'success',
-            message: 'Generated Kompose business idea with 18 tasks'
-          });
-        }
+        // Decode the chunk and split by newlines
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n').filter(line => line.trim() !== '');
         
-        // If generation failed, show error
-        if (status.status === 'failed') {
-          clearInterval(statusCheckInterval.current);
-          
-          setMessageHistory([
-            ...messageHistory,
-            {
-              role: 'system',
-              content: `Error generating business idea: ${status.error || 'Unknown error'}. Please try again.`,
-              timestamp: new Date().toISOString(),
-              error: true
+        // Process each line as a separate JSON message
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line);
+            
+            // Handle different message types
+            switch (data.type) {
+              case 'init':
+                // Set the generation ID
+                setGenerationId(data.block_id);
+                
+                // Add system message
+                addMessage({
+                  role: 'system',
+                  content: data.message,
+                  timestamp: new Date().toISOString()
+                });
+                
+                addLog({
+                  type: 'info',
+                  message: data.message
+                });
+                break;
+                
+              case 'task_result':
+                // Update current step
+                setCurrentStep(data.task_number);
+                
+                // Format the task result for display
+                const taskResult = formatTaskResult({
+                  task_number: data.task_number,
+                  task_title: data.task_title,
+                  ...data.result
+                });
+                
+                // Add to results state
+                setResults(prevResults => {
+                  // Replace if task already exists, otherwise add
+                  const existingIndex = prevResults.findIndex(r => 
+                    r.taskInfo && r.taskInfo.id === data.task_number
+                  );
+                  
+                  if (existingIndex >= 0) {
+                    const newResults = [...prevResults];
+                    newResults[existingIndex] = taskResult;
+                    return newResults;
+                  } else {
+                    return [...prevResults, taskResult];
+                  }
+                });
+                
+                // Add message to history
+                addMessage({
+                  role: 'assistant',
+                  content: `Task ${data.task_number}: ${data.task_title}`,
+                  timestamp: new Date().toISOString(),
+                  fullResponse: {
+                    task_number: data.task_number,
+                    task_title: data.task_title,
+                    ...data.result
+                  }
+                });
+                
+                addLog({
+                  type: 'success',
+                  message: `Completed task ${data.task_number}: ${data.task_title}`
+                });
+                break;
+                
+              case 'task_error':
+                // Update current step anyway to show progress
+                setCurrentStep(data.task_number);
+                
+                // Add error message
+                addMessage({
+                  role: 'system',
+                  content: `Error in Task ${data.task_number}: ${data.error}`,
+                  timestamp: new Date().toISOString(),
+                  error: true
+                });
+                
+                addLog({
+                  type: 'error',
+                  message: `Error in task ${data.task_number}: ${data.error}`
+                });
+                break;
+                
+              case 'complete':
+                // All tasks completed successfully
+                setIsGenerating(false);
+                setIsStreaming(false);
+                
+                addMessage({
+                  role: 'system',
+                  content: 'Business idea generation completed successfully!',
+                  timestamp: new Date().toISOString()
+                });
+                
+                addLog({
+                  type: 'success',
+                  message: 'Generated Kompose business idea with all tasks'
+                });
+                break;
+                
+              case 'error':
+                // Error occurred during generation
+                setStreamError(data.error);
+                setIsGenerating(false);
+                setIsStreaming(false);
+                
+                addMessage({
+                  role: 'system',
+                  content: `Error generating business idea: ${data.error}`,
+                  timestamp: new Date().toISOString(),
+                  error: true
+                });
+                
+                addLog({
+                  type: 'error',
+                  message: `Error generating business idea: ${data.error}`
+                });
+                break;
             }
-          ]);
-          
-          setIsGenerating(false);
-          
-          addLog({
-            type: 'error',
-            message: `Error generating business idea: ${status.error || 'Unknown error'}`
-          });
+          } catch (err) {
+            console.error('Error parsing streaming response:', err, line);
+          }
         }
       }
     } catch (error) {
-      console.error('Error checking generation status:', error);
+      console.error('Error processing streaming response:', error);
+      
+      // Set error state and update UI
+      setStreamError(error.message);
+      setIsGenerating(false);
+      setIsStreaming(false);
+      
+      addMessage({
+        role: 'system',
+        content: `Error processing results: ${error.message}`,
+        timestamp: new Date().toISOString(),
+        error: true
+      });
+      
       addLog({
         type: 'error',
-        message: `Error checking generation status: ${error.message}`
+        message: `Error processing results: ${error.message}`
       });
+    } finally {
+      setIsStreaming(false);
+      readerRef.current = null;
+      streamControllerRef.current = null;
     }
   };
 
-  // Generate a business idea
+  // Generate a business idea using streaming
   const generateIdea = async () => {
-    if (isGenerating) return;
+    if (isGenerating || isStreaming) return;
     
     // Reset previous results
     setResults([]);
     setCurrentStep(0);
+    setStreamError(null);
     setIsGenerating(true);
     
     try {
@@ -218,57 +293,41 @@ export default function KomposeGenerate() {
           role: 'user',
           content: userPrompt || 'Generate a complete business idea',
           timestamp: new Date().toISOString()
-        },
-        {
-          role: 'system',
-          content: 'Starting business idea generation with 18 task analysis...',
-          timestamp: new Date().toISOString()
         }
       ]);
       
       addLog({
         type: 'info',
-        message: 'Starting Kompose business idea generation'
+        message: 'Starting Kompose business idea generation with streaming'
       });
       
-      // Call the API to generate the idea
-      const response = await api.generateKomposeIdea({
+      // Call the API to generate the idea with streaming
+      const stream = await api.streamKomposeIdea({
         userId,
-        blockId: currentBlockId,
         userPrompt: userPrompt || undefined
       });
       
-      // If successful, set up status checking
-      if (response.block_id) {
-        setGenerationId(response.block_id);
-        
-        // Set up interval to check generation status
-        statusCheckInterval.current = setInterval(() => {
-          checkGenerationStatus(response.block_id);
-        }, 2000);
-      } else {
-        throw new Error(response.message || 'Failed to generate business idea');
-      }
+      // Process the streaming response
+      await processStreamingResponse(stream);
     } catch (error) {
-      console.error('Error generating idea:', error);
+      console.error('Error initiating streaming generation:', error);
+      
+      // Set error state and update UI
+      setStreamError(error.message);
+      setIsGenerating(false);
       
       // Add error message
-      setMessageHistory([
-        ...messageHistory,
-        {
-          role: 'system',
-          content: `Error generating business idea: ${error.message}. Please try again.`,
-          timestamp: new Date().toISOString(),
-          error: true
-        }
-      ]);
+      addMessage({
+        role: 'system',
+        content: `Error generating business idea: ${error.message}. Please try again.`,
+        timestamp: new Date().toISOString(),
+        error: true
+      });
       
       addLog({
         type: 'error',
         message: `Error generating business idea: ${error.message}`
       });
-      
-      setIsGenerating(false);
     }
   };
   
@@ -282,6 +341,25 @@ export default function KomposeGenerate() {
   // Handle user prompt change
   const handlePromptChange = (e) => {
     setUserPrompt(e.target.value);
+  };
+  
+  // Cancel generation
+  const cancelGeneration = () => {
+    if (isStreaming || isGenerating) {
+      cleanupStream();
+      setIsGenerating(false);
+      
+      addMessage({
+        role: 'system',
+        content: 'Business idea generation cancelled.',
+        timestamp: new Date().toISOString()
+      });
+      
+      addLog({
+        type: 'warning',
+        message: 'Business idea generation cancelled by user'
+      });
+    }
   };
 
   return (
@@ -325,34 +403,34 @@ export default function KomposeGenerate() {
           </div>
           
           <div className="flex justify-center mb-6">
-            <button
-              onClick={generateIdea}
-              disabled={isGenerating}
-              className={`px-6 py-3 rounded-lg text-black font-medium flex items-center gap-2 border border-black cursor-pointer ${
-                isGenerating ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary hover:bg-primary-dark'
-              }`}
-            >
-              {isGenerating ? (
-                <>
-                  <div className="w-5 h-5 border-t-2 border-r-2 border-white rounded-full animate-spin"></div>
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-rocket"></i>
-                  Generate Business Analysis
-                </>
-              )}
-            </button>
-            
-            {currentBlockId && results.length > 0 && (
+            {!isGenerating ? (
               <button
-                onClick={viewBlock}
-                className="ml-4 px-6 py-3 rounded-lg border border-primary text-primary hover:bg-primary/5 font-medium flex items-center gap-2"
+                onClick={generateIdea}
+                className="px-6 py-3 rounded-lg text-black font-medium flex items-center gap-2 border border-black cursor-pointer bg-primary hover:bg-primary-dark"
               >
-                <i className="fas fa-eye"></i>
-                View Full Results
+                <i className="fas fa-rocket"></i>
+                Generate Business Analysis
               </button>
+            ) : (
+              <div className="flex gap-3">
+                <button
+                  onClick={cancelGeneration}
+                  className="px-6 py-3 rounded-lg bg-red-500 text-white font-medium flex items-center gap-2 hover:bg-red-600"
+                >
+                  <i className="fas fa-stop"></i>
+                  Cancel Generation
+                </button>
+                
+                {currentBlockId && results.length > 0 && (
+                  <button
+                    onClick={viewBlock}
+                    className="px-6 py-3 rounded-lg border border-primary text-primary hover:bg-primary/5 font-medium flex items-center gap-2"
+                  >
+                    <i className="fas fa-eye"></i>
+                    View Results
+                  </button>
+                )}
+              </div>
             )}
           </div>
           
@@ -397,12 +475,22 @@ export default function KomposeGenerate() {
                         <i className={`fas ${task.icon}`}></i>
                       )}
                     </div>
-                    <div className="text-sm font-medium">
+                    <div className="text-sm font-medium truncate">
                       {task.title}
                     </div>
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+          
+          {streamError && (
+            <div className="p-4 mt-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center gap-2 text-red-600 mb-2">
+                <i className="fas fa-exclamation-circle"></i>
+                <h3 className="font-medium">Generation Error</h3>
+              </div>
+              <p className="text-red-700">{streamError}</p>
             </div>
           )}
         </motion.div>
@@ -420,7 +508,7 @@ export default function KomposeGenerate() {
           </AnimatePresence>
           
           {/* Typing indicator */}
-          {isGenerating && <TypingIndicator />}
+          {isGenerating && isStreaming && currentStep < allTasks.length && <TypingIndicator />}
           
         </div>
       </div>

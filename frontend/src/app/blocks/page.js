@@ -12,6 +12,7 @@ export default function BlocksPage() {
   const searchParams = useSearchParams();
   const [blocks, setBlocks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [creatingBlock, setCreatingBlock] = useState(false);
   const [selectedType, setSelectedType] = useState('all');
   
   // Get user ID from store
@@ -27,17 +28,28 @@ export default function BlocksPage() {
     resetStore();
     
     // Initialize user if needed
-    initializeUser();
+    const currentUserId = initializeUser();
     
     // Get blockType from query params
-    const typeParam = searchParams.get('type');
-    if (typeParam) {
-      setSelectedType(typeParam);
-    }
+    const typeParam = searchParams?.get('type') || 'all';
     
-    // Load blocks
-    fetchBlocks(typeParam || 'all');
+    // Set the selected type
+    setSelectedType(typeParam);
+    
+    // Ensure userId is available before fetching
+    if (currentUserId) {
+      // Load blocks
+      fetchBlocks(typeParam);
+    }
   }, [searchParams]);
+  
+  // Secondary effect to handle user ID initialization 
+  // This ensures blocks are loaded even if user ID wasn't ready in the first useEffect
+  useEffect(() => {
+    if (userId && loading) {
+      fetchBlocks(selectedType);
+    }
+  }, [userId]);
   
   // Fetch blocks from API
   const fetchBlocks = async (type = 'all') => {
@@ -46,6 +58,7 @@ export default function BlocksPage() {
     setLoading(true);
     
     try {
+      console.log(`Fetching blocks of type: ${type}`);
       const data = await api.getBlocks({ 
         userId, 
         blockType: type,
@@ -104,14 +117,16 @@ export default function BlocksPage() {
     router.push(`/blocks/${blockId}`);
   };
   
-  // Handle new block creation
+  // Handle new block creation with automatic navigation
   const handleNewBlock = async () => {
     try {
-      // Create a new block
-      const blockId = createNewBlock('kompose', 'New Kompose Chat');
+      setCreatingBlock(true);
       
-      // Navigate to the new block
+      // Create a new block - now an async operation
+      const blockId = await createNewBlock('kompose', 'New Kompose Chat');
       router.push(`/blocks/${blockId}`);
+
+      setCreatingBlock(false);
     } catch (error) {
       console.error('Error creating new block:', error);
       
@@ -119,6 +134,8 @@ export default function BlocksPage() {
         type: 'error',
         message: `Error creating new block: ${error.message}`
       });
+      
+      setCreatingBlock(false);
     }
   };
   
@@ -126,6 +143,13 @@ export default function BlocksPage() {
   const handleFilterChange = (type) => {
     setSelectedType(type);
     router.push(`/blocks?type=${type}`);
+  };
+  
+  // Force reload blocks when needed
+  const handleRefreshBlocks = () => {
+    if (userId) {
+      fetchBlocks(selectedType);
+    }
   };
   
   return (
@@ -154,11 +178,31 @@ export default function BlocksPage() {
               </div>
               
               <button
-                onClick={handleNewBlock}
-                className="px-4 py-2 bg-primary text-black rounded-md hover:bg-primary-dark flex items-center gap-2"
+                onClick={handleRefreshBlocks}
+                className="px-4 py-2 bg-white text-gray-700 rounded-md hover:bg-gray-100 border border-gray-300 flex items-center gap-2"
+                title="Refresh blocks"
               >
-                <i className="fas fa-plus"></i>
-                New Block
+                <i className="fas fa-sync"></i>
+              </button>
+              
+              <button
+                onClick={handleNewBlock}
+                disabled={creatingBlock}
+                className={`px-4 py-2 bg-primary text-black rounded-md hover:bg-primary-dark flex items-center gap-2 ${
+                  creatingBlock ? 'opacity-75 cursor-wait' : ''
+                }`}
+              >
+                {creatingBlock ? (
+                  <>
+                    <i className="fas fa-circle-notch fa-spin"></i>
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-plus"></i>
+                    New Block
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -174,12 +218,34 @@ export default function BlocksPage() {
               </div>
               <h2 className="text-xl font-medium text-gray-700 mb-2">No blocks found</h2>
               <p className="text-gray-600 mb-6">Get started by creating a new Kompose block</p>
-              <button
-                onClick={handleNewBlock}
-                className="px-6 py-3 bg-primary text-black rounded-md hover:bg-primary-dark"
-              >
-                Create New Block
-              </button>
+              <div className="flex gap-4 justify-center">
+                <button
+                  onClick={handleNewBlock}
+                  disabled={creatingBlock}
+                  className={`px-6 py-3 bg-primary text-black rounded-md hover:bg-primary-dark flex items-center gap-2 ${
+                    creatingBlock ? 'opacity-75 cursor-wait' : ''
+                  }`}
+                >
+                  {creatingBlock ? (
+                    <>
+                      <i className="fas fa-circle-notch fa-spin"></i>
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-plus"></i>
+                      Create New Block
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleRefreshBlocks}
+                  className="px-6 py-3 bg-white text-gray-700 rounded-md hover:bg-gray-100 border border-gray-300"
+                >
+                  <i className="fas fa-sync mr-2"></i>
+                  Refresh
+                </button>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -225,6 +291,12 @@ export default function BlocksPage() {
                         <div className="text-xs bg-gray-100 rounded-md p-2 font-mono">
                           {block.block_id}
                         </div>
+                        {block.is_local && (
+                          <div className="mt-2 text-xs py-1 px-2 bg-yellow-100 text-yellow-800 rounded-md inline-flex items-center">
+                            <i className="fas fa-exclamation-triangle mr-1"></i>
+                            Local only
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   );

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { useParams } from 'next/navigation';
 import Header from '@/components/ui/Header';
 import BlockSidebar from '@/components/ui/BlockSidebar';
 import BlockChatInterface from '@/components/ui/BlockChatInterface';

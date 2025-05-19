@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from datetime import datetime
 import uuid
@@ -6,7 +6,7 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
 import logging
-import json
+import json, re
 from helpers.global_helper import sanitize_response
 
 # Import our block handlers
@@ -195,6 +195,227 @@ def analyze_block():
             "block_type": "kompose",
             "response": response
         })
+
+@app.route('/api/stream-kompose-idea', methods=['POST'])
+def stream_kompose_idea():
+    """
+    Stream a complete Kompose business idea with tasks as they complete
+    """
+    data = request.json
+    user_id = data.get('user_id')
+    
+    if not user_id:
+        return jsonify({'error': 'user_id is required'}), 400
+    
+    # Create a new block ID
+    block_id = str(uuid.uuid4())
+    
+    # Get user prompt if available
+    user_prompt = data.get('user_prompt')
+    
+    # Initialize database records
+    flow_status = {
+        "user_id": user_id,
+        "block_id": block_id,
+        "block_type": "kompose",
+        "initial_input": user_prompt,
+        "flow_status": {},
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+    
+    flow_collection.insert_one(flow_status)
+    
+    # Store user message in history
+    history_collection.insert_one({
+        "user_id": user_id,
+        "block_id": block_id,
+        "role": "user",
+        "message": user_prompt,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    })
+    
+    # Store block in blocks collection
+    blocks_collection.insert_one({
+        "block_id": block_id,
+        "user_id": user_id,
+        "type": "kompose",
+        "name": "Kompose Business Idea",
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    })
+    
+    # Initialize one-click generation record
+    one_click_collection.insert_one({
+        "user_id": user_id,
+        "block_id": block_id,
+        "user_prompt": user_prompt,
+        "status": "in_progress",
+        "tasks_completed": 0,
+        "tasks_total": 18,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    })
+    
+    # Create a generator function to stream results
+    def generate_results():
+        # Initial response with block ID
+        yield json.dumps({
+            "type": "init",
+            "block_id": block_id,
+            "block_type": "kompose",
+            "message": "Starting Kompose business idea generation"
+        }) + '\n'
+        
+        # Initialize handler
+        handler = KomposeBlockHandler(db, block_id, user_id)
+        
+        # Stream each task result individually
+        try:
+            # Get all tasks from handler
+            tasks = handler.get_kompose_tasks(user_prompt)
+            
+            for i, task in enumerate(tasks):
+                try:
+                    # Execute individual task and measure time
+                    start_time = datetime.utcnow()
+                    
+                    # Update status to show which task is being processed
+                    one_click_collection.update_one(
+                        {"block_id": block_id},
+                        {
+                            "$set": {
+                                "current_task": i + 1,
+                                "updated_at": start_time
+                            }
+                        }
+                    )
+                    
+                    # Execute the task
+                    result = handler.execute_kompose_task(i + 1, task, user_prompt)
+                    
+                    # Calculate processing time
+                    end_time = datetime.utcnow()
+                    processing_time = (end_time - start_time).total_seconds()
+                    
+                    # Try to parse JSON from the result
+                    json_match = re.search(r'({.*})', result, re.DOTALL)
+                    if json_match:
+                        try:
+                            result_data = json.loads(json_match.group(1))
+                            # Add task number and title
+                            result_data["task_number"] = i + 1
+                            result_data["task_title"] = handler._get_task_title(i + 1)
+                            result_data["processing_time"] = processing_time
+                            
+                            # Store each task result as a separate message
+                            history_collection.insert_one({
+                                "user_id": user_id,
+                                "block_id": block_id,
+                                "role": "assistant",
+                                "message": f"Task {i+1}: {handler._get_task_title(i + 1)}",
+                                "result": result_data,
+                                "task_number": i + 1,
+                                "created_at": datetime.utcnow(),
+                                "updated_at": datetime.utcnow()
+                            })
+                            
+                            # Update one_click_collection record with progress
+                            one_click_collection.update_one(
+                                {"block_id": block_id},
+                                {
+                                    "$set": {
+                                        "tasks_completed": i + 1,
+                                        "updated_at": datetime.utcnow()
+                                    }
+                                }
+                            )
+                            
+                            # Stream the result
+                            yield json.dumps({
+                                "type": "task_result",
+                                "task_number": i + 1,
+                                "task_title": handler._get_task_title(i + 1),
+                                "processing_time": processing_time,
+                                "result": result_data
+                            }) + '\n'
+                            
+                        except json.JSONDecodeError:
+                            logger.error(f"Failed to parse JSON for task {i+1}: {result}")
+                            # Stream error for this task
+                            yield json.dumps({
+                                "type": "task_error",
+                                "task_number": i + 1,
+                                "task_title": handler._get_task_title(i + 1),
+                                "error": "Failed to parse result",
+                                "raw_result": result
+                            }) + '\n'
+                    else:
+                        logger.error(f"No JSON found in result for task {i+1}")
+                        # Stream error for this task
+                        yield json.dumps({
+                            "type": "task_error",
+                            "task_number": i + 1,
+                            "task_title": handler._get_task_title(i + 1),
+                            "error": "No JSON found in result",
+                            "raw_result": result
+                        }) + '\n'
+                        
+                except Exception as e:
+                    logger.error(f"Error executing task {i+1}: {str(e)}")
+                    # Stream error for this task
+                    yield json.dumps({
+                        "type": "task_error",
+                        "task_number": i + 1,
+                        "task_title": handler._get_task_title(i + 1),
+                        "error": f"Error executing task: {str(e)}"
+                    }) + '\n'
+            
+            # Update status to complete
+            one_click_collection.update_one(
+                {"block_id": block_id},
+                {
+                    "$set": {
+                        "status": "complete",
+                        "updated_at": datetime.utcnow()
+                    }
+                }
+            )
+            
+            # Final completion message
+            yield json.dumps({
+                "type": "complete",
+                "block_id": block_id,
+                "message": "Kompose business idea generated successfully",
+                "timestamp": datetime.utcnow().isoformat()
+            }) + '\n'
+            
+        except Exception as e:
+            logger.error(f"Error generating Kompose idea: {str(e)}")
+            
+            # Update status to failed
+            one_click_collection.update_one(
+                {"block_id": block_id},
+                {
+                    "$set": {
+                        "status": "failed",
+                        "error": str(e),
+                        "updated_at": datetime.utcnow()
+                    }
+                }
+            )
+            
+            # Stream error message
+            yield json.dumps({
+                "type": "error",
+                "block_id": block_id,
+                "error": str(e),
+                "message": "Error generating Kompose idea"
+            }) + '\n'
+    
+    # Return a streaming response
+    return Response(generate_results(), mimetype='text/event-stream')
 
 @app.route('/api/generate-kompose-idea', methods=['POST'])
 def generate_kompose_idea():

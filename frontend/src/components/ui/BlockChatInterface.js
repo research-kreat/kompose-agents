@@ -12,6 +12,9 @@ import { getWelcomeMessage, getBlockTypeInfo } from '@/lib/blockUtils';
 export default function BlockChatInterface({ blockId, blockType = 'kompose' }) {
   const router = useRouter();
   const chatContainerRef = useRef(null);
+  const [blockNotFound, setBlockNotFound] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const [creatingBlock, setCreatingBlock] = useState(false);
   
   // Extract all state from the store
   const userId = useChatStore(state => state.userId);
@@ -27,6 +30,7 @@ export default function BlockChatInterface({ blockId, blockType = 'kompose' }) {
   const setBlockInfo = useChatStore(state => state.setBlockInfo);
   const setMessageHistory = useChatStore(state => state.setMessageHistory);
   const setCurrentBlockId = useChatStore(state => state.setCurrentBlockId);
+  const createNewBlock = useChatStore(state => state.createNewBlock);
 
   // Initialize user if not already set
   useEffect(() => {
@@ -38,62 +42,22 @@ export default function BlockChatInterface({ blockId, blockType = 'kompose' }) {
     }
   }, [blockId]);
 
-  useEffect(() => {
-    if (blockId && userId) {
-      // Set loading state
-      setIsTyping(true);
+  // Function to fetch messages for the current block
+  const fetchMessages = async () => {
+    if (!blockId || !userId) {
+      return;
+    }
+    
+    // Set loading state
+    setIsTyping(true);
+    
+    try {
+      const data = await api.getBlock({ blockId, userId });
       
-      // Fetch messages for the current block
-      const fetchMessages = async () => {
-        try {
-          const data = await api.getBlock({ blockId, userId });
-          
-          // Check if we received valid messages
-          if (data.messages && Array.isArray(data.messages)) {
-            // If there are no messages, add a welcome message
-            if (data.messages.length === 0) {
-              setMessageHistory([
-                {
-                  role: 'system',
-                  content: getWelcomeMessage(blockType),
-                  timestamp: new Date().toISOString()
-                }
-              ]);
-            } else {
-              // Format messages to match expected structure
-              const formattedMessages = data.messages.map(msg => ({
-                role: msg.role,
-                content: msg.message,
-                timestamp: msg.created_at || new Date().toISOString(),
-                // Include fullResponse if it exists in the result
-                fullResponse: msg.result || null
-              }));
-              
-              setMessageHistory(formattedMessages);
-            }
-            
-            // Update block info
-            setBlockInfo({
-              ...blockInfo,
-              messageCount: data.messages.length,
-              type: data.block.type || blockType,
-              blockId: data.block.block_id,
-              created: data.block.created_at
-            });
-            
-            addLog({
-              type: 'info',
-              message: 'Loaded conversation history'
-            });
-          }
-        } catch (error) {
-          console.error('Error loading messages:', error);
-          addLog({
-            type: 'error',
-            message: `Error loading messages: ${error.message}`
-          });
-          
-          // Add a welcome message as fallback
+      // Check if we received valid messages
+      if (data.messages && Array.isArray(data.messages)) {
+        // If there are no messages, add a welcome message
+        if (data.messages.length === 0) {
           setMessageHistory([
             {
               role: 'system',
@@ -101,13 +65,76 @@ export default function BlockChatInterface({ blockId, blockType = 'kompose' }) {
               timestamp: new Date().toISOString()
             }
           ]);
-        } finally {
-          setIsTyping(false);
+        } else {
+          // Format messages to match expected structure
+          const formattedMessages = data.messages.map(msg => ({
+            role: msg.role,
+            content: msg.message,
+            timestamp: msg.created_at || new Date().toISOString(),
+            // Include fullResponse if it exists in the result
+            fullResponse: msg.result || null
+          }));
+          
+          setMessageHistory(formattedMessages);
         }
-      };
+        
+        // Update block info
+        setBlockInfo({
+          ...blockInfo,
+          messageCount: data.messages.length,
+          type: data.block.type || blockType,
+          blockId: data.block.block_id,
+          created: data.block.created_at
+        });
+        
+        addLog({
+          type: 'info',
+          message: 'Loaded conversation history'
+        });
+        
+        // Clear block not found state if we successfully loaded messages
+        setBlockNotFound(false);
+      }
+    } catch (error) {
+      console.error('Error loading messages:', error);
       
-      fetchMessages();
+      // Check if this is a "Block not found" error
+      if (error.message === 'Block not found') {
+        setBlockNotFound(true);
+        
+        // Add error message to the chat
+        setMessageHistory([
+          {
+            role: 'system',
+            content: 'This block was not found or may have been deleted. You can create a new block or navigate back to the blocks list.',
+            timestamp: new Date().toISOString(),
+            error: true
+          }
+        ]);
+      } else {
+        addLog({
+          type: 'error',
+          message: `Error loading messages: ${error.message}`
+        });
+        
+        // Add a welcome message as fallback
+        setMessageHistory([
+          {
+            role: 'system',
+            content: getWelcomeMessage(blockType),
+            timestamp: new Date().toISOString()
+          }
+        ]);
+      }
+    } finally {
+      setIsTyping(false);
+      setRetrying(false);
     }
+  };
+
+  // Load messages when component mounts
+  useEffect(() => {
+    fetchMessages();
   }, [blockId, userId, blockType]);
 
   // Handle sending a message
@@ -288,6 +315,45 @@ export default function BlockChatInterface({ blockId, blockType = 'kompose' }) {
       message: 'Chat exported to JSON'
     });
   };
+  
+  // Handle creating a new block with automatic navigation
+  const handleCreateNewBlock = async () => {
+    try {
+      setCreatingBlock(true);
+      
+      // Create a new block - now an async operation
+      const newBlockId = await createNewBlock('kompose', 'New Kompose Chat');
+      
+      // Add a slight delay to ensure the block is created properly before navigating
+      setTimeout(() => {
+        // Navigate to the new block
+        router.push(`/blocks/${newBlockId}`);
+        
+        // Reset creation state
+        setCreatingBlock(false);
+      }, 300);
+    } catch (error) {
+      console.error('Error creating new block:', error);
+      
+      addLog({
+        type: 'error',
+        message: `Error creating new block: ${error.message}`
+      });
+      
+      setCreatingBlock(false);
+    }
+  };
+  
+  // Handle retrying to load messages
+  const handleRetry = () => {
+    setRetrying(true);
+    fetchMessages();
+  };
+  
+  // Handle navigating back to blocks list
+  const handleBackToBlocks = () => {
+    router.push('/blocks');
+  };
 
   // Get block icon based on type
   const getBlockIcon = () => {
@@ -321,23 +387,67 @@ export default function BlockChatInterface({ blockId, blockType = 'kompose' }) {
         </div>
         
         <div className="flex gap-2">
-          <button
-            onClick={handleExportChat}
-            disabled={!blockId || messageHistory.length === 0}
-            className="p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors"
-            title="Export Conversation"
-          >
-            <i className="fas fa-download"></i>
-          </button>
-          
-          <button
-            onClick={handleClearChat}
-            disabled={!blockId || messageHistory.length === 0}
-            className="p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors"
-            title="Clear Chat"
-          >
-            <i className="fas fa-refresh"></i>
-          </button>
+          {!blockNotFound ? (
+            <>
+              <button
+                onClick={handleExportChat}
+                disabled={!blockId || messageHistory.length === 0}
+                className={`p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors ${
+                  (!blockId || messageHistory.length === 0) ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                title="Export Conversation"
+              >
+                <i className="fas fa-download"></i>
+              </button>
+              
+              <button
+                onClick={handleClearChat}
+                disabled={!blockId || messageHistory.length === 0}
+                className={`p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors ${
+                  (!blockId || messageHistory.length === 0) ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                title="Clear Chat"
+              >
+                <i className="fas fa-refresh"></i>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleCreateNewBlock}
+                disabled={creatingBlock}
+                className={`p-2 rounded-full text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors ${
+                  creatingBlock ? 'opacity-50 cursor-wait' : ''
+                }`}
+                title="Create New Block"
+              >
+                {creatingBlock ? (
+                  <i className="fas fa-circle-notch fa-spin"></i>
+                ) : (
+                  <i className="fas fa-plus"></i>
+                )}
+              </button>
+              
+              <button
+                onClick={handleBackToBlocks}
+                className="p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors"
+                title="Back to Blocks"
+              >
+                <i className="fas fa-arrow-left"></i>
+              </button>
+              
+              <button
+                onClick={handleRetry}
+                disabled={retrying}
+                className={`p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors ${
+                  retrying ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                title="Retry Loading Block"
+              >
+                <i className={`fas ${retrying ? 'fa-spinner fa-spin' : 'fa-redo'}`}></i>
+              </button>
+            </>
+          )}
         </div>
       </div>
       
@@ -359,11 +469,51 @@ export default function BlockChatInterface({ blockId, blockType = 'kompose' }) {
         {/* Typing indicator */}
         {isTyping && <TypingIndicator />}
         
+        {/* Block not found UI */}
+        {blockNotFound && (
+          <div className="flex flex-col items-center justify-center gap-4 my-8 bg-white p-6 rounded-lg shadow-md border border-gray-200">
+            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
+              <i className="fas fa-exclamation-circle text-red-500 text-2xl"></i>
+            </div>
+            <h3 className="text-lg font-medium text-gray-800">Block Not Found</h3>
+            <p className="text-gray-600 text-center max-w-md">
+              This block may have been deleted or doesn't exist. You can create a new block or go back to your blocks list.
+            </p>
+            <div className="flex gap-4 mt-2">
+              <button
+                onClick={handleCreateNewBlock}
+                disabled={creatingBlock}
+                className={`px-4 py-2 bg-primary text-black rounded-md hover:bg-primary-dark transition-colors flex items-center gap-2 ${
+                  creatingBlock ? 'opacity-75 cursor-wait' : ''
+                }`}
+              >
+                {creatingBlock ? (
+                  <>
+                    <i className="fas fa-circle-notch fa-spin"></i>
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-plus"></i>
+                    Create New Block
+                  </>
+                )}
+              </button>
+              <button
+                onClick={handleBackToBlocks}
+                className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+              >
+                <i className="fas fa-arrow-left mr-2"></i>
+                Back to Blocks
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       
       <ChatInput 
         onSendMessage={handleSendMessage}
-        disabled={!blockId || isTyping}
+        disabled={!blockId || isTyping || blockNotFound || creatingBlock}
       />
     </div>
   );

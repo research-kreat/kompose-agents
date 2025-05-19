@@ -1,14 +1,20 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { useState } from 'react';
 import { getBlockTypeInfo } from '@/lib/blockUtils';
+import { useChatStore } from '@/store/chatStore';
 
 export default function Header({ 
   blockId = null, 
-  blockType = 'kompose',
-  handleNewChat = () => {} 
+  blockType = 'kompose'
 }) {
   const router = useRouter();
+  const [creatingBlock, setCreatingBlock] = useState(false);
+  
+  // Get store actions for creating blocks
+  const createNewBlock = useChatStore(state => state.createNewBlock);
+  const addLog = useChatStore(state => state.addLog);
   
   // Get block info using the utility function
   const blockInfo = getBlockTypeInfo(blockType);
@@ -21,6 +27,39 @@ export default function Header({
   // Get icon based on page type
   const getIcon = () => {
     return blockInfo ? blockInfo.icon : 'fa-lightbulb';
+  };
+  
+  // Handle creating a new block
+  const handleNewChat = async () => {
+    try {
+      setCreatingBlock(true);
+      
+      // Create a new block
+      const newBlockId = await createNewBlock(blockType, `New ${getPageTitle()}`);
+      
+      // Add a slight delay to ensure the block is created properly before navigating
+      setTimeout(() => {
+        // Navigate to the new block
+        router.push(`/blocks/${newBlockId}`);
+        
+        // Reset creation state
+        setCreatingBlock(false);
+      }, 300);
+      
+      addLog({
+        type: 'success',
+        message: `Created new ${blockType} block`
+      });
+    } catch (error) {
+      console.error('Error creating new block:', error);
+      
+      addLog({
+        type: 'error',
+        message: `Error creating new block: ${error.message}`
+      });
+      
+      setCreatingBlock(false);
+    }
   };
   
   return (
@@ -53,9 +92,20 @@ export default function Header({
             </span>
             <button
               onClick={handleNewChat}
-              className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md text-sm flex items-center gap-1 hover:bg-gray-300 transition duration-300"
+              disabled={creatingBlock}
+              className={`px-3 py-2 bg-gray-200 text-gray-700 rounded-md text-sm flex items-center gap-1 hover:bg-gray-300 transition duration-300 ${
+                creatingBlock ? 'opacity-70 cursor-wait' : ''
+              }`}
             >
-              <i className="fas fa-plus"></i> New {getPageTitle()}
+              {creatingBlock ? (
+                <>
+                  <i className="fas fa-circle-notch fa-spin"></i> Creating...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-plus"></i> New {getPageTitle()}
+                </>
+              )}
             </button>
           </div>
         )}

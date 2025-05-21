@@ -409,6 +409,150 @@ def stream_kompose_idea():
     # Return a streaming response
     return Response(generate_results(), mimetype='text/event-stream')
 
+@app.route('/api/generate-kompose-idea', methods=['POST'])
+def generate_kompose_idea():
+    """
+    Generate a complete Kompose business idea with 18 tasks
+    """
+    data = request.json
+    user_id = data.get('user_id')
+    
+    if not user_id:
+        return jsonify({'error': 'user_id is required'}), 400
+    
+    # Create a new block ID
+    block_id = str(uuid.uuid4())
+    
+    # Get user prompt if available
+    user_prompt = data.get('user_prompt')
+    
+    # Initialize flow status
+    flow_status = {
+        "user_id": user_id,
+        "block_id": block_id,
+        "initial_input": user_prompt,
+        "flow_status": {},
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+    
+    # Store in MongoDB
+    flow_collection.insert_one(flow_status)
+    
+    # Store user message in history
+    history_collection.insert_one({
+        "user_id": user_id,
+        "block_id": block_id,
+        "role": "user",
+        "message": user_prompt,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    })
+    
+    # Store block in blocks collection
+    blocks_collection.insert_one({
+        "block_id": block_id,
+        "user_id": user_id,
+        "name": "Kompose Business Idea",
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    })
+    
+    # Initialize one-click generation record
+    one_click_record = {
+        "user_id": user_id,
+        "block_id": block_id,
+        "user_prompt": user_prompt,
+        "status": "in_progress",
+        "tasks_completed": 0,
+        "tasks_total": 18,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+    one_click_collection.insert_one(one_click_record)
+    
+    # Initialize handler
+    handler = KomposeBlockHandler(db, block_id, user_id)
+    
+    # Generate the Kompose idea
+    try:
+        results = handler.generate_kompose_idea(user_prompt)
+        
+        # Store the results in history
+        for i, result in enumerate(results):
+            # Store each task result as a separate message
+            history_collection.insert_one({
+                "user_id": user_id,
+                "block_id": block_id,
+                "role": "assistant",
+                "message": f"Task {i+1}: {result.get('task_title', 'Task')}",
+                "result": result,
+                "task_number": i + 1,
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+            })
+            
+            # Update one_click_collection record with progress
+            one_click_collection.update_one(
+                {"block_id": block_id},
+                {
+                    "$set": {
+                        "tasks_completed": i + 1,
+                        "updated_at": datetime.utcnow()
+                    }
+                }
+            )
+        
+        # Update status to complete
+        one_click_collection.update_one(
+            {"block_id": block_id},
+            {
+                "$set": {
+                    "status": "complete",
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        return jsonify({
+            "block_id": block_id,
+            "results": results,
+            "success": True,
+            "message": "Kompose business idea generated successfully"
+        })
+    except Exception as e:
+        logger.error(f"Error generating Kompose idea: {str(e)}")
+        
+        # Update status to failed
+        one_click_collection.update_one(
+            {"block_id": block_id},
+            {
+                "$set": {
+                    "status": "failed",
+                    "error": str(e),
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        # Store error message in history
+        history_collection.insert_one({
+            "user_id": user_id,
+            "block_id": block_id,
+            "role": "assistant",
+            "message": f"Error generating Kompose idea: {str(e)}",
+            "error": str(e),
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        })
+        
+        return jsonify({
+            "block_id": block_id,
+            "error": str(e),
+            "success": False,
+            "message": "Error generating Kompose idea"
+        }), 500
+
 @app.route('/api/blocks', methods=['GET'])
 def get_blocks():
     """

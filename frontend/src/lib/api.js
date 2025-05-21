@@ -66,39 +66,6 @@ export const api = {
   },
   
   /**
-   * Generate a Kompose business idea with 18 tasks
-   * @param {Object} params - Parameters
-   * @param {string} params.userId - User ID
-   * @param {string} [params.blockId] - Block ID to associate with
-   * @param {string} [params.userPrompt] - User prompt to guide generation
-   * @returns {Promise<Object>} - Response data with all tasks results
-   */
-  generateKomposeIdea: async ({ userId, blockId = null, userPrompt = null }) => {
-    // Prepare request body
-    const requestBody = {
-      user_id: userId
-    };
-    
-    // Add block ID if provided
-    if (blockId) {
-      requestBody.block_id = blockId;
-    }
-    
-    // Add user prompt if provided
-    if (userPrompt) {
-      requestBody.user_prompt = userPrompt;
-    }
-    
-    return api.fetchWithErrorHandling('/generate-kompose-idea', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
-  },
-  
-  /**
    * Get blocks for a user
    * @param {Object} params - Parameters
    * @param {string} params.userId - User ID
@@ -125,23 +92,6 @@ export const api = {
     
     return api.fetchWithErrorHandling(
       `/blocks/${encodeURIComponent(blockId)}?user_id=${encodeURIComponent(userId)}`
-    );
-  },
-  
-  /**
-   * Get generation status for a one-click generation
-   * @param {Object} params - Parameters
-   * @param {string} params.blockId - Block ID
-   * @param {string} params.userId - User ID
-   * @returns {Promise<Object>} - Response data with generation status
-   */
-  getGenerationStatus: async ({ blockId, userId }) => {
-    if (!blockId || !userId) {
-      throw new Error('Block ID and User ID are required');
-    }
-    
-    return api.fetchWithErrorHandling(
-      `/get-generation-status?block_id=${encodeURIComponent(blockId)}&user_id=${encodeURIComponent(userId)}`
     );
   },
   

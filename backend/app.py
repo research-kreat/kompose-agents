@@ -116,7 +116,8 @@ def analyze_block():
     """
     data = request.json
     user_id = data.get('user_id')
-    block_id = data.get('block_id')
+
+    block_id = str(uuid.uuid4())
     
     if not user_id or not block_id:
         return jsonify({'error': 'user_id and block_id are required'}), 400

@@ -285,7 +285,7 @@ def stream_kompose_idea():
                     )
                     
                     # Execute the task
-                    result = handler.execute_kompose_task(i + 1, task, user_prompt)
+                    result = handler.stream_kompose_task(i + 1, task, user_prompt)
                     
                     # Calculate processing time
                     end_time = datetime.utcnow()
@@ -722,4 +722,4 @@ def create_block():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001, host="0.0.0.0")
+    app.run(debug=True, port=5001, host="0.0.0.0.0")

@@ -161,7 +161,7 @@ class KomposeBlockHandler(BaseBlockHandler):
         )
         
         # Define all 18 tasks
-        tasks = self._create_task_definitions(initial_user_input)
+        tasks = self._create_task_definitions(initial_user_input, kompose_agent)
         
         # Create the crew with all tasks
         crew = Crew(
@@ -174,12 +174,9 @@ class KomposeBlockHandler(BaseBlockHandler):
         # Execute all tasks and collect results
         try:
             results = []
-            # Execute all tasks in sequence
+            # Instead of executing through crew, we'll execute each task individually
             for i, task in enumerate(tasks):
                 try:
-                    # Set the agent for the task
-                    task.agent = kompose_agent
-                    
                     # Execute individual task
                     result = kompose_agent.execute_task(task)
                     
@@ -235,9 +232,20 @@ class KomposeBlockHandler(BaseBlockHandler):
         Returns:
             list: All task definitions
         """
-        return self._create_task_definitions(user_prompt)
+        # Create the agent for all tasks
+        kompose_agent = Agent(
+            role="Business Analysis Expert",
+            goal="Generate comprehensive business analysis using structured matrices",
+            backstory="""You are an expert in business analysis, market research, 
+            and startup strategy. You help entrepreneurs analyze business ideas 
+            using data-driven frameworks and structured analytical matrices.""",
+            verbose=True,
+            llm=self.llm
+        )
+        
+        return self._create_task_definitions(user_prompt, kompose_agent)
     
-    def execute_kompose_task(self, task_number, task, user_prompt=None):
+    def stream_kompose_task(self, task_number, task, user_prompt=None):
         """
         Execute a single task and return the result
         
@@ -249,29 +257,32 @@ class KomposeBlockHandler(BaseBlockHandler):
         Returns:
             str: Raw result from the task execution
         """
-        # Create the agent
-        kompose_agent = Agent(
-            role="Business Analysis Expert",
-            goal="Generate comprehensive business analysis using structured matrices",
-            backstory="""You are an expert in business analysis, market research, 
-            and startup strategy. You help entrepreneurs analyze business ideas 
-            using data-driven frameworks and structured analytical matrices.""",
-            verbose=True,
-            llm=self.llm
-        )
-        
-        # Set the agent for the task
-        task.agent = kompose_agent
+        # Task should already have an agent assigned, but check anyway
+        if task.agent is None:
+            # Create the agent
+            kompose_agent = Agent(
+                role="Business Analysis Expert",
+                goal="Generate comprehensive business analysis using structured matrices",
+                backstory="""You are an expert in business analysis, market research, 
+                and startup strategy. You help entrepreneurs analyze business ideas 
+                using data-driven frameworks and structured analytical matrices.""",
+                verbose=True,
+                llm=self.llm
+            )
+            
+            # Set the agent for the task
+            task.agent = kompose_agent
         
         # Execute the task
-        return kompose_agent.execute_task(task)
+        return task.agent.execute_task(task)
     
-    def _create_task_definitions(self, user_prompt=None):
+    def _create_task_definitions(self, user_prompt=None, agent=None):
         """
         Create task definitions for all Kompose tasks
         
         Args:
             user_prompt: Optional prompt from the user
+            agent: Agent to assign to each task
             
         Returns:
             list: All task definitions
@@ -298,7 +309,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             
             Be specific and realistic with your classifications based on the business idea. For example, if it's like "Zepto for Fashion", the Industry might be "Retail" (Primary), "Fashion" (Secondary), "Quick Commerce" (Tertiary).
             """,
-            agent=None,  # We'll set the agent when executing
+            agent=agent,  # Now assigning agent directly
             expected_output="JSON with Initial Classification Matrix"
         ))
         
@@ -320,7 +331,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             
             Provide real-world examples of similar businesses with accurate metrics (revenue, growth, market share), success factors (bullet points with • symbol), and market positions.
             """,
-            agent=None,
+            agent=agent,
             expected_output="JSON with Similar Business Analysis Matrix"
         ))
         
@@ -342,7 +353,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             
             For Growth Potential, use text indicators like "High", "Medium", "Low". For Competition Level, use "High", "Medium", "Low". For Opportunity Score, use a scale of 1-10.
             """,
-            agent=None,
+            agent=agent,
             expected_output="JSON with Market Opportunity Grid"
         ))
         
@@ -364,7 +375,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             
             Group trends by categories like "Consumer Behavior", "Technology", "Delivery", etc. For Impact, use text indicators like "High", "Medium", "Low". For Adoption Rate, use percentages. For Relevance, use terms like "Critical", "Important", "Standard", "Differentiator", "Innovative".
             """,
-            agent=None,
+            agent=agent,
             expected_output="JSON with Market Trends Heat Map"
         ))
         
@@ -385,7 +396,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             
             Analyze the competitive landscape realistically, showing direct competition (similar business models), indirect competition (alternative solutions), and your potential market position.
             """,
-            agent=None,
+            agent=agent,
             expected_output="JSON with Competition Analysis Matrix"
         ))
         
@@ -406,7 +417,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             
             Assess key opportunity factors with relevant status descriptions, opportunity levels (High, Medium, Low), and risk levels (High, Medium, Low).
             """,
-            agent=None,
+            agent=agent,
             expected_output="JSON with Opportunity Assessment Matrix"
         ))
         
@@ -427,7 +438,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             
             For Requirements, list 3 key requirements for each area, formatted as bullet points with line breaks (e.g., "• Mobile App<br>• AI/ML<br>• Real-time Tracking"). For Current Market and Your Potential, provide concise assessments like "Limited Solutions", "Competitive Edge", etc.
             """,
-            agent=None,
+            agent=agent,
             expected_output="JSON with Key Success Factors Matrix"
         ))
         
@@ -448,7 +459,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             
             Identify key growth drivers relevant to the business, their impact (High, Medium, Low), trend direction (Rising, Stable, Declining), and time horizon for realization (Immediate, Short Term, Medium Term, Long Term).
             """,
-            agent=None,
+            agent=agent,
             expected_output="JSON with Growth Drivers Matrix"
         ))
         
@@ -470,7 +481,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             
             For Focus Areas, list 3 key focus areas for each investor type as bullet points with line breaks (e.g., "• Tech Integration<br>• Supply Chain<br>• Customer Analytics"). For Trends, use text indicators (Increasing, Stable, Declining).
             """,
-            agent=None,
+            agent=agent,
             expected_output="JSON with Investment Landscape Matrix"
         ))
         
@@ -492,7 +503,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             
             Identify the key technology components needed for the business, evaluate available market solutions, gap analysis (Low Gap, Medium Gap, High Gap, Very High Gap), implementation complexity, and approximate cost ranges with realistic numerical values for each component.
             """,
-            agent=None,
+            agent=agent,
             expected_output="JSON with Technology Stack Requirements"
         ))
         
@@ -514,7 +525,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             
             Analyze the regulatory landscape relevant to the business idea, current and future regulatory trends, potential impact levels (Low, Medium, High), and approximate compliance costs with numerical ranges for each aspect.
             """,
-            agent=None,
+            agent=agent,
             expected_output="JSON with Regulatory Environment Matrix"
         ))
         
@@ -536,7 +547,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             
             Analyze the supply chain components specific to the business idea, current state of each component, key pain points, opportunities for innovation, and cost impact (Low, Medium, High).
             """,
-            agent=None,
+            agent=agent,
             expected_output="JSON with Supply Chain Analysis"
         ))
         
@@ -558,7 +569,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             
             Map the customer journey touchpoints relevant to the business idea, current market standards, pain points, potential for innovation (Low, Medium, High, Very High), and priority level (Low, Medium, High, Critical).
             """,
-            agent=None,
+            agent=agent,
             expected_output="JSON with Customer Experience Mapping"
         ))
         
@@ -580,7 +591,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             
             Define the human and operational resources needed for the business, both initially and for scaling up, resource availability (Limited, Available, Abundant), and cost levels (Low, Medium, High).
             """,
-            agent=None,
+            agent=agent,
             expected_output="JSON with Resource Requirements Matrix"
         ))
         
@@ -602,7 +613,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             
             Identify key risk categories, assess probability (Low, Medium, High), potential impact (Low, Medium, High), availability of mitigation measures (Available, Partial, Limited, None), and priority level (Low, Medium, High, Critical).
             """,
-            agent=None,
+            agent=agent,
             expected_output="JSON with Risk Assessment Matrix"
         ))
         
@@ -624,7 +635,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             
             Analyze key unit economics metrics: Customer Acquisition Cost (CAC), Lifetime Value (LTV), Average Order Value (AOV), Gross Margin, Delivery Cost, and other metrics relevant to the business. Compare industry averages, best-in-class benchmarks, and potential for your business. Use numeric values without currency symbols.
             """,
-            agent=None,
+            agent=agent,
             expected_output="JSON with Unit Economics Baseline"
         ))
         
@@ -646,7 +657,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             
             Identify relevant market segments for the business idea, calculate Total Addressable Market (TAM), Serviceable Addressable Market (SAM), Serviceable Obtainable Market (SOM), and growth rates for each segment. Include a "Combined Opportunity" row with totals. Use numeric values without currency symbols.
             """,
-            agent=None,
+            agent=agent,
             expected_output="JSON with Market Size Segmentation"
         ))
         
@@ -668,7 +679,7 @@ class KomposeBlockHandler(BaseBlockHandler):
             
             Analyze potential competitive advantages (moats), evaluate the current market state for each moat type, development potential (Low, Medium, High, Very High), estimated time to build the moat, and approximate investment needed with realistic numerical ranges for each moat type.
             """,
-            agent=None,
+            agent=agent,
             expected_output="JSON with Competitive Moat Analysis"
         ))
         

@@ -328,10 +328,10 @@ class KomposeBlockHandler(BaseBlockHandler):
                     "Market Position": ["Position 1", "Position 2", "Position 3"]
                 }}
             }}
-            
-            Provide real-world examples of similar businesses with accurate key metrics (revenue, growth, market share), success factors, and market positions.
+
+            Provide real-world examples of similar businesses with accurate key metrics (revenue, growth, market share) in string format, success factors, and market positions.
             """,
-            agent=agent,
+            agent=agent, 
             expected_output="JSON with Similar Business Analysis Matrix"
         ))
         

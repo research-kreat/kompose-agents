@@ -52,17 +52,25 @@ export default function Home() {
             <AgentCard 
               icon="fa-list-ol" 
               title="Step-by-Step Business Generation" 
-              description="{generate-kompose-idea} Generate a complete business idea one task at a time with more control" 
+              description="{generate-kompose-marketanalysis} Generate a complete business idea one task at a time with more control" 
               active={true} 
-              link="/kompose/chat" 
+              link="/kompose/generate" 
             />
             
             <AgentCard 
               icon="fa-lightbulb" 
-              title="One-Click Business Generation" 
-              description="{stream-kompose-idea} Generate a complete business idea with all 18 steps automatically" 
+              title="Stream Business Generation" 
+              description="{stream-kompose-marketanalysis} Generate a complete business idea with all 18 steps automatically" 
               active={true} 
-              link="/kompose/generate" 
+              link="/kompose/stream" 
+            />
+
+            <AgentCard 
+              icon="fa-cogs" 
+              title="One-Click Business Generation" 
+              description="{flow-kompose-marketanalysis} Generate a complete business idea with all 18 steps automatically" 
+              active={true} 
+              link="/kompose/flow" 
             />
           </motion.div>
         </motion.section>

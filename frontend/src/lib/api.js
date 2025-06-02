@@ -79,7 +79,7 @@ export const api = {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
-      const response = await api.fetchWithErrorHandling('/generate-kompose-idea', {
+      const response = await api.fetchWithErrorHandling('/generate-kompose-marketanalysis', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -221,7 +221,7 @@ export const api = {
     }
     
     try {
-      const response = await fetch(`${API_BASE_URL}/stream-kompose-idea`, {
+      const response = await fetch(`${API_BASE_URL}/stream-kompose-marketanalysis`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -237,10 +237,59 @@ export const api = {
       
       return response.body;
     } catch (error) {
-      console.error(`API error (stream-kompose-idea):`, error);
+      console.error(`API error (stream-kompose-marketanalysis):`, error);
       throw error;
     }
-  }
+  },
+
+
+/**
+ * Generate a Kompose business idea with all 18 tasks in a single flow request
+ * @param {Object} params - Parameters
+ * @param {string} params.userId - User ID
+ * @param {string} [params.userPrompt] - User prompt to guide generation
+ * @returns {Promise<Object>} - Response data with all tasks results
+ */
+  flowKomposeIdea: async ({ userId, userPrompt = null }) => {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+    
+    // Prepare request body
+    const requestBody = {
+      user_id: userId
+    };
+    
+    // Add user prompt if provided
+    if (userPrompt) {
+      requestBody.user_prompt = userPrompt;
+    }
+    
+    try {
+      // Add timeout to prevent hanging requests (increased for flow processing)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout for flow processing
+      
+      const response = await api.fetchWithErrorHandling('/flow-kompose-marketanalysis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      // Enhance error with more context
+      if (error.name === 'AbortError') {
+        throw new Error('Request timed out. The flow processing is taking too long.');
+      }
+      
+      throw new Error(`Failed to generate Kompose idea in flow: ${error.message}`);
+    }
+  },
 };
 
 export default api;

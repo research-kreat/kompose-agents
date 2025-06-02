@@ -80,8 +80,8 @@ export default function KomposeChat() {
   
     try {
       // Call the API to get response
-      const data = await api.analyzeBlock({
-        message: content,
+      const data = await api.generateKomposeIdea({
+        userPrompt: content,
         userId,
         blockId: currentBlockId
       });

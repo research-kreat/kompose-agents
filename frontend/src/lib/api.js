@@ -33,39 +33,6 @@ export const api = {
   },
 
   /**
-   * Send a message to analyze a block
-   * @param {Object} params - Parameters
-   * @param {string} params.message - User message
-   * @param {string} params.userId - User ID
-   * @param {string} [params.blockId] - Block ID (if continuing conversation)
-   * @returns {Promise<Object>} - Response data
-   */
-  analyzeBlock: async ({ message, userId, blockId = null }) => {
-    // Determine the endpoint based on whether this is a new block or existing one
-    const endpoint = blockId ? '/analyze_block' : '/analyze';
-    
-    // Prepare request body
-    const requestBody = blockId 
-      ? {
-          message,
-          user_id: userId,
-          block_id: blockId
-        }
-      : {
-          message,
-          user_id: userId
-        };
-          
-    return api.fetchWithErrorHandling(`${endpoint}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
-  },
-  
-  /**
    * Generate a Kompose business idea with 18 tasks
    * @param {Object} params - Parameters
    * @param {string} params.userId - User ID

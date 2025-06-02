@@ -163,8 +163,8 @@ export default function BlockChatInterface({ blockId }) {
   
     try {
       // Use the centralized API
-      const data = await api.analyzeBlock({
-        message: content,
+      const data = await api.generateKomposeIdea({
+        userPrompt: content,
         userId: currentUserId,
         blockId
       });

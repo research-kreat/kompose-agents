@@ -329,7 +329,7 @@ class KomposeBlockHandler(BaseBlockHandler):
                 }}
             }}
             
-            Provide real-world examples of similar businesses with accurate metrics (revenue, growth, market share), success factors (bullet points with • symbol), and market positions.
+            Provide real-world examples of similar businesses with accurate key metrics (revenue, growth, market share), success factors, and market positions.
             """,
             agent=agent,
             expected_output="JSON with Similar Business Analysis Matrix"

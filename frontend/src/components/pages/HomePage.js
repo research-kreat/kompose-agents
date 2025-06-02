@@ -50,14 +50,6 @@ export default function Home() {
             animate="show"
           >
             <AgentCard 
-              icon="fa-comment" 
-              title="Interactive Mode" 
-              description="Chat with the AI and develop business ideas through conversation" 
-              active={true} 
-              link="/kompose/chat" 
-            />
-            
-            <AgentCard 
               icon="fa-lightbulb" 
               title="One-Click Business Generation" 
               description="Generate a complete business idea with all 18 steps automatically" 

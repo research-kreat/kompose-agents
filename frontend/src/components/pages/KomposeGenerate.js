@@ -9,15 +9,16 @@ import Message from '@/components/ui/Message';
 import TypingIndicator from '@/components/ui/TypingIndicator';
 import { getKomposeTasks, formatTaskResult } from '@/lib/blockUtils';
 
-export default function KomposeGenerate() {
+export default function KomposeGenerateNext() {
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
   const [results, setResults] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
+  const [nextStep, setNextStep] = useState(1);
   const [userPrompt, setUserPrompt] = useState('');
   const [generationId, setGenerationId] = useState(null);
-  const [streamError, setStreamError] = useState(null);
-  const [isStreaming, setIsStreaming] = useState(false);
+  const [error, setError] = useState(null);
+  const [allCompleted, setAllCompleted] = useState(false);
   
   // Get all tasks
   const allTasks = getKomposeTasks();
@@ -27,12 +28,12 @@ export default function KomposeGenerate() {
   const addLog = useChatStore(state => state.addLog);
   const initializeUser = useChatStore(state => state.initializeUser);
   const resetStore = useChatStore(state => state.resetStore);
-  const createNewBlock = useChatStore(state => state.createNewBlock);
   const messageHistory = useChatStore(state => state.messageHistory);
   const setMessageHistory = useChatStore(state => state.setMessageHistory);
   const setBlockInfo = useChatStore(state => state.setBlockInfo);
   const currentBlockId = useChatStore(state => state.currentBlockId);
   const addMessage = useChatStore(state => state.addMessage);
+  const setCurrentBlockId = useChatStore(state => state.setCurrentBlockId);
   
   // Initialize user on component mount
   useEffect(() => {
@@ -43,245 +44,26 @@ export default function KomposeGenerate() {
     setMessageHistory([
       {
         role: 'system',
-        content: 'Welcome to One-Click Business Generation! Enter a business concept prompt below to generate a complete business idea with all 18 analytical tasks.',
+        content: 'Welcome to Step-by-Step Business Generation! Enter a business concept prompt below and click "Start" to generate a complete business idea task by task.',
         timestamp: new Date().toISOString()
       }
     ]);
     
-    // Create a new block for this session
-    const blockId = createNewBlock('Kompose One-Click Business Generator');
-    
-    // Set block info
-    setBlockInfo({
-      created: new Date().toISOString(),
-      blockId: blockId
-    });
-    
     return () => {
-      // Cleanup any active streams
-      if (isStreaming) {
-        cleanupStream();
-      }
+      // Cleanup if needed
     };
   }, []);
   
-  // Reference to the current reader
-  const readerRef = useRef(null);
-  const streamControllerRef = useRef(null);
-  
-  // Cleanup stream
-  const cleanupStream = () => {
-    if (readerRef.current) {
-      try {
-        readerRef.current.cancel();
-      } catch (e) {
-        console.error("Error cancelling stream:", e);
-      }
-      readerRef.current = null;
-    }
+  // Start generating the first task
+  const startGeneration = async () => {
+    if (isGenerating) return;
     
-    if (streamControllerRef.current) {
-      try {
-        streamControllerRef.current.abort();
-      } catch (e) {
-        console.error("Error aborting stream:", e);
-      }
-      streamControllerRef.current = null;
-    }
-    
-    setIsStreaming(false);
-  };
-  
-  // Function to process streaming response
-  const processStreamingResponse = async (stream) => {
-    try {
-      // Create an abort controller for the stream
-      const controller = new AbortController();
-      streamControllerRef.current = controller;
-      
-      // Get the reader from the stream
-      const reader = stream.getReader();
-      readerRef.current = reader;
-      
-      // Create a TextDecoder to decode the chunks
-      const decoder = new TextDecoder();
-      
-      setIsStreaming(true);
-      
-      // Read the stream
-      while (true) {
-        const { done, value } = await reader.read();
-        
-        if (done) {
-          break;
-        }
-        
-        // Decode the chunk and split by newlines
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n').filter(line => line.trim() !== '');
-        
-        // Process each line as a separate JSON message
-        for (const line of lines) {
-          try {
-            const data = JSON.parse(line);
-            
-            // Handle different message types
-            switch (data.type) {
-              case 'init':
-                // Set the generation ID
-                setGenerationId(data.block_id);
-                
-                // Add system message
-                addMessage({
-                  role: 'system',
-                  content: data.message,
-                  timestamp: new Date().toISOString()
-                });
-                
-                addLog({
-                  type: 'info',
-                  message: data.message
-                });
-                break;
-                
-              case 'task_result':
-                // Update current step
-                setCurrentStep(data.task_number);
-                
-                // Format the task result for display
-                const taskResult = formatTaskResult({
-                  task_number: data.task_number,
-                  task_title: data.task_title,
-                  ...data.result
-                });
-                
-                // Add to results state
-                setResults(prevResults => {
-                  // Replace if task already exists, otherwise add
-                  const existingIndex = prevResults.findIndex(r => 
-                    r.taskInfo && r.taskInfo.id === data.task_number
-                  );
-                  
-                  if (existingIndex >= 0) {
-                    const newResults = [...prevResults];
-                    newResults[existingIndex] = taskResult;
-                    return newResults;
-                  } else {
-                    return [...prevResults, taskResult];
-                  }
-                });
-                
-                // Add message to history
-                addMessage({
-                  role: 'assistant',
-                  content: `Task ${data.task_number}: ${data.task_title}`,
-                  timestamp: new Date().toISOString(),
-                  fullResponse: {
-                    task_number: data.task_number,
-                    task_title: data.task_title,
-                    ...data.result
-                  }
-                });
-                
-                addLog({
-                  type: 'success',
-                  message: `Completed task ${data.task_number}: ${data.task_title}`
-                });
-                break;
-                
-              case 'task_error':
-                // Update current step anyway to show progress
-                setCurrentStep(data.task_number);
-                
-                // Add error message
-                addMessage({
-                  role: 'system',
-                  content: `Error in Task ${data.task_number}: ${data.error}`,
-                  timestamp: new Date().toISOString(),
-                  error: true
-                });
-                
-                addLog({
-                  type: 'error',
-                  message: `Error in task ${data.task_number}: ${data.error}`
-                });
-                break;
-                
-              case 'complete':
-                // All tasks completed successfully
-                setIsGenerating(false);
-                setIsStreaming(false);
-                
-                addMessage({
-                  role: 'system',
-                  content: 'Business idea generation completed successfully!',
-                  timestamp: new Date().toISOString()
-                });
-                
-                addLog({
-                  type: 'success',
-                  message: 'Generated Kompose business idea with all tasks'
-                });
-                break;
-                
-              case 'error':
-                // Error occurred during generation
-                setStreamError(data.error);
-                setIsGenerating(false);
-                setIsStreaming(false);
-                
-                addMessage({
-                  role: 'system',
-                  content: `Error generating business idea: ${data.error}`,
-                  timestamp: new Date().toISOString(),
-                  error: true
-                });
-                
-                addLog({
-                  type: 'error',
-                  message: `Error generating business idea: ${data.error}`
-                });
-                break;
-            }
-          } catch (err) {
-            console.error('Error parsing streaming response:', err, line);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error processing streaming response:', error);
-      
-      // Set error state and update UI
-      setStreamError(error.message);
-      setIsGenerating(false);
-      setIsStreaming(false);
-      
-      addMessage({
-        role: 'system',
-        content: `Error processing results: ${error.message}`,
-        timestamp: new Date().toISOString(),
-        error: true
-      });
-      
-      addLog({
-        type: 'error',
-        message: `Error processing results: ${error.message}`
-      });
-    } finally {
-      setIsStreaming(false);
-      readerRef.current = null;
-      streamControllerRef.current = null;
-    }
-  };
-
-  // Generate a business idea using streaming
-  const generateIdea = async () => {
-    if (isGenerating || isStreaming) return;
-    
-    // Reset previous results
+    // Reset states
     setResults([]);
     setCurrentStep(0);
-    setStreamError(null);
+    setNextStep(1);
+    setError(null);
+    setAllCompleted(false);
     setIsGenerating(true);
     
     try {
@@ -290,50 +72,170 @@ export default function KomposeGenerate() {
         ...messageHistory,
         {
           role: 'user',
-          content: userPrompt || 'Generate a complete business idea',
+          content: userPrompt || 'Generate a complete business idea step by step',
           timestamp: new Date().toISOString()
         }
       ]);
       
       addLog({
         type: 'info',
-        message: 'Starting Kompose business idea generation with streaming'
+        message: 'Starting Kompose business idea generation (task by task)'
       });
       
-      // Call the API to generate the idea with streaming
-      const stream = await api.streamKomposeIdea({
+      // Call the API to initialize the generation process
+      const response = await api.generateKomposeIdea({
         userId,
         userPrompt: userPrompt || undefined
       });
       
-      // Process the streaming response
-      await processStreamingResponse(stream);
+      if (response.success) {
+        // Store the block ID for future task generations
+        setGenerationId(response.block_id);
+        setCurrentBlockId(response.block_id);
+        
+        // Set block info
+        setBlockInfo({
+          created: new Date().toISOString(),
+          blockId: response.block_id
+        });
+        
+        addMessage({
+          role: 'system',
+          content: 'Ready to generate tasks one by one. Click "Generate Next Task" to continue.',
+          timestamp: new Date().toISOString()
+        });
+        
+        setIsGenerating(false);
+      }
     } catch (error) {
-      console.error('Error initiating streaming generation:', error);
-      
-      // Set error state and update UI
-      setStreamError(error.message);
+      console.error('Error starting generation:', error);
+      setError(error.message);
       setIsGenerating(false);
       
-      // Add error message
       addMessage({
         role: 'system',
-        content: `Error generating business idea: ${error.message}. Please try again.`,
+        content: `Error starting business idea generation: ${error.message}. Please try again.`,
         timestamp: new Date().toISOString(),
         error: true
       });
       
       addLog({
         type: 'error',
-        message: `Error generating business idea: ${error.message}`
+        message: `Error starting business idea generation: ${error.message}`
       });
     }
   };
   
-  // View a block
-  const viewBlock = () => {
-    if (currentBlockId) {
-      router.push(`/blocks/${currentBlockId}`);
+  // Generate the next task
+  const generateNextTask = async () => {
+    if (isGenerating || !generationId) return;
+    
+    setIsGenerating(true);
+    setError(null);
+    
+    try {
+      // Call the API to generate the next task
+      const response = await api.generateKomposeIdea({
+        userId,
+        blockId: generationId,
+        userPrompt: userPrompt || undefined
+      });
+      
+      if (response.success) {
+        // Update the current step
+        setCurrentStep(response.task_number);
+        
+        // Check if all tasks are completed
+        if (response.completed) {
+          setAllCompleted(true);
+          
+          addMessage({
+            role: 'system',
+            content: 'All tasks have been completed successfully!',
+            timestamp: new Date().toISOString()
+          });
+          
+          addLog({
+            type: 'success',
+            message: 'Generated all Kompose business idea tasks'
+          });
+        } else {
+          // Update the next step
+          setNextStep(response.next_task);
+          
+          // Format the task result for display
+          const taskResult = formatTaskResult({
+            task_number: response.task_number,
+            task_title: response.task_title,
+            ...response.task_result
+          });
+          
+          // Add to results state
+          setResults(prevResults => {
+            // Replace if task already exists, otherwise add
+            const existingIndex = prevResults.findIndex(r => 
+              r.taskInfo && r.taskInfo.id === response.task_number
+            );
+            
+            if (existingIndex >= 0) {
+              const newResults = [...prevResults];
+              newResults[existingIndex] = taskResult;
+              return newResults;
+            } else {
+              return [...prevResults, taskResult];
+            }
+          });
+          
+          // Add message to history
+          addMessage({
+            role: 'assistant',
+            content: `Task ${response.task_number}: ${response.task_title}`,
+            timestamp: new Date().toISOString(),
+            fullResponse: {
+              task_number: response.task_number,
+              task_title: response.task_title,
+              ...response.task_result
+            }
+          });
+          
+          addLog({
+            type: 'success',
+            message: `Completed task ${response.task_number}: ${response.task_title}`
+          });
+        }
+      } else {
+        // Handle error
+        setError(response.error);
+        
+        addMessage({
+          role: 'system',
+          content: `Error generating task: ${response.error}`,
+          timestamp: new Date().toISOString(),
+          error: true
+        });
+        
+        addLog({
+          type: 'error',
+          message: `Error generating task: ${response.error}`
+        });
+      }
+    } catch (error) {
+      console.error('Error generating next task:', error);
+      setError(error.message);
+      
+      addMessage({
+        role: 'system',
+        content: `Error generating task: ${error.message}`,
+        timestamp: new Date().toISOString(),
+        error: true
+      });
+      
+      addLog({
+        type: 'error',
+        message: `Error generating task: ${error.message}`
+      });
+    } finally {
+      setIsGenerating(false);
     }
   };
   
@@ -342,30 +244,42 @@ export default function KomposeGenerate() {
     setUserPrompt(e.target.value);
   };
   
-  // Cancel generation
-  const cancelGeneration = () => {
-    if (isStreaming || isGenerating) {
-      cleanupStream();
-      setIsGenerating(false);
-      
-      addMessage({
-        role: 'system',
-        content: 'Business idea generation cancelled.',
-        timestamp: new Date().toISOString()
-      });
-      
-      addLog({
-        type: 'warning',
-        message: 'Business idea generation cancelled by user'
-      });
+  // View the block
+  const viewBlock = () => {
+    if (generationId) {
+      router.push(`/blocks/${generationId}`);
     }
+  };
+  
+  // Restart the generation
+  const restartGeneration = () => {
+    setGenerationId(null);
+    setResults([]);
+    setCurrentStep(0);
+    setNextStep(1);
+    setError(null);
+    setAllCompleted(false);
+    
+    // Reset message history to just the welcome message
+    setMessageHistory([
+      {
+        role: 'system',
+        content: 'Welcome to Step-by-Step Business Generation! Enter a business concept prompt below and click "Start" to generate a complete business idea task by task.',
+        timestamp: new Date().toISOString()
+      }
+    ]);
+    
+    addLog({
+      type: 'info',
+      message: 'Reset generation process'
+    });
   };
 
   return (
     <main className="min-h-screen flex flex-col bg-gray-100">
       <Header 
-        blockId={currentBlockId}
-        handleNewChat={() => router.push('/kompose/generate')}
+        blockId={generationId}
+        handleNewChat={restartGeneration}
       />
       
       <div className="flex-1 p-6 overflow-y-auto flex flex-col items-center">
@@ -380,59 +294,49 @@ export default function KomposeGenerate() {
               <i className="fas fa-lightbulb text-primary text-xl"></i>
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-gray-800">One-Click Business Analysis Matrix Generator</h2>
-              <p className="text-gray-600">Generate a complete business idea with all 18 analytical matrix tasks</p>
+              <h2 className="text-xl font-semibold text-gray-800">Step-by-Step Business Analysis Generator</h2>
+              <p className="text-gray-600">Generate a complete business idea one task at a time</p>
             </div>
           </div>
           
-          <div className="mb-4">
-            <label htmlFor="userPrompt" className="block text-sm font-medium text-gray-700 mb-1">
-              Business Concept Prompt
-            </label>
-            <textarea
-              id="userPrompt"
-              value={userPrompt}
-              onChange={handlePromptChange}
-              placeholder="e.g., A sustainable fashion marketplace for recycled clothing, Zepto for Fashion, or an AI-powered health monitoring app for seniors..."
-              disabled={isGenerating}
-              className="w-full p-3 border border-gray-300 rounded-lg resize-none h-20 focus:ring-primary focus:border-primary"
-              required={true}
-            />
-          </div>
-          
-          <div className="flex justify-center mb-6">
-            {!isGenerating ? (
-              <button
-                onClick={generateIdea}
-                className="px-6 py-3 rounded-lg text-black font-medium flex items-center gap-2 border border-black cursor-pointer bg-primary hover:bg-primary-dark"
-              >
-                <i className="fas fa-rocket"></i>
-                Generate Business Analysis
-              </button>
-            ) : (
-              <div className="flex gap-3">
+          {!generationId ? (
+            <div className="mb-4">
+              <label htmlFor="userPrompt" className="block text-sm font-medium text-gray-700 mb-1">
+                Business Concept Prompt
+              </label>
+              <textarea
+                id="userPrompt"
+                value={userPrompt}
+                onChange={handlePromptChange}
+                placeholder="e.g., A sustainable fashion marketplace for recycled clothing, Zepto for Fashion, or an AI-powered health monitoring app for seniors..."
+                disabled={isGenerating}
+                className="w-full p-3 border border-gray-300 rounded-lg resize-none h-20 focus:ring-primary focus:border-primary"
+                required={true}
+              />
+              
+              <div className="flex justify-center mt-4">
                 <button
-                  onClick={cancelGeneration}
-                  className="px-6 py-3 rounded-lg bg-red-500 text-white font-medium flex items-center gap-2 hover:bg-red-600"
+                  onClick={startGeneration}
+                  disabled={isGenerating}
+                  className={`px-6 py-3 rounded-lg text-black font-medium flex items-center gap-2 border border-black cursor-pointer bg-primary hover:bg-primary-dark ${
+                    isGenerating ? 'opacity-75 cursor-wait' : ''
+                  }`}
                 >
-                  <i className="fas fa-stop"></i>
-                  Cancel Generation
+                  {isGenerating ? (
+                    <>
+                      <i className="fas fa-circle-notch fa-spin"></i>
+                      Initializing...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-play"></i>
+                      Start Generation
+                    </>
+                  )}
                 </button>
-                
-                {currentBlockId && results.length > 0 && (
-                  <button
-                    onClick={viewBlock}
-                    className="px-6 py-3 rounded-lg border border-primary text-primary hover:bg-primary/5 font-medium flex items-center gap-2"
-                  >
-                    <i className="fas fa-eye"></i>
-                    View Results
-                  </button>
-                )}
               </div>
-            )}
-          </div>
-          
-          {isGenerating && (
+            </div>
+          ) : (
             <div className="mb-4">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-gray-800">Generation Progress</h3>
@@ -479,16 +383,57 @@ export default function KomposeGenerate() {
                   </div>
                 ))}
               </div>
+              
+              <div className="flex justify-center gap-4 mt-6">
+                {!allCompleted ? (
+                  <button
+                    onClick={generateNextTask}
+                    disabled={isGenerating}
+                    className={`px-6 py-3 rounded-lg text-black font-medium flex items-center gap-2 border border-black cursor-pointer bg-primary hover:bg-primary-dark ${
+                      isGenerating ? 'opacity-75 cursor-wait' : ''
+                    }`}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <i className="fas fa-circle-notch fa-spin"></i>
+                        Generating Task {nextStep}...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-arrow-right"></i>
+                        Generate Next Task
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    onClick={viewBlock}
+                    className="px-6 py-3 rounded-lg text-white font-medium flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                  >
+                    <i className="fas fa-check-circle"></i>
+                    All Tasks Completed - View Results
+                  </button>
+                )}
+                
+                <button
+                  onClick={restartGeneration}
+                  disabled={isGenerating}
+                  className="px-6 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium flex items-center gap-2 hover:bg-gray-100"
+                >
+                  <i className="fas fa-redo"></i>
+                  Start Over
+                </button>
+              </div>
             </div>
           )}
           
-          {streamError && (
+          {error && (
             <div className="p-4 mt-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center gap-2 text-red-600 mb-2">
                 <i className="fas fa-exclamation-circle"></i>
                 <h3 className="font-medium">Generation Error</h3>
               </div>
-              <p className="text-red-700">{streamError}</p>
+              <p className="text-red-700">{error}</p>
             </div>
           )}
         </motion.div>
@@ -506,8 +451,7 @@ export default function KomposeGenerate() {
           </AnimatePresence>
           
           {/* Typing indicator */}
-          {isGenerating && isStreaming && currentStep < allTasks.length && <TypingIndicator />}
-          
+          {isGenerating && <TypingIndicator />}
         </div>
       </div>
     </main>

@@ -50,6 +50,14 @@ export default function Home() {
             animate="show"
           >
             <AgentCard 
+              icon="fa-list-ol" 
+              title="Step-by-Step Business Generation" 
+              description="Generate a complete business idea one task at a time with more control" 
+              active={true} 
+              link="/kompose/chat" 
+            />
+            
+            <AgentCard 
               icon="fa-lightbulb" 
               title="One-Click Business Generation" 
               description="Generate a complete business idea with all 18 steps automatically" 

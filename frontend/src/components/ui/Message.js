@@ -116,9 +116,13 @@ export default function Message({ message, isLast }) {
   
   // Check if this is a Kompose task result message
   const isKomposeTaskResult = 
-    fullResponse && 
+    (fullResponse && 
     fullResponse.task_number && 
-    fullResponse.task_title;
+    fullResponse.task_title) || 
+    (fullResponse && 
+    fullResponse.task_result && 
+    fullResponse.task_result.task_number && 
+    fullResponse.task_result.task_title);
 
   // Render matrix table for Kompose task results
   const renderMatrixTable = (matrixData) => {
@@ -220,12 +224,15 @@ export default function Message({ message, isLast }) {
       </motion.div>
     );
   }
-  
+
   // Render Kompose task result
   const renderKomposeTaskResult = () => {
     if (!isKomposeTaskResult) return null;
     
-    const taskNumber = fullResponse.task_number;
+    // Handle both the old 'fullResponse' structure and the new structure with task_result
+    const taskData = fullResponse.task_result || fullResponse;
+    const taskNumber = taskData.task_number;
+    const taskTitle = taskData.task_title;
     const taskColors = getTaskColors(taskNumber);
     const taskIcon = getTaskIcon(taskNumber);
     
@@ -247,7 +254,7 @@ export default function Message({ message, isLast }) {
                 Task {taskNumber} of 18
               </div>
               <div className="text-gray-900 font-bold text-lg">
-                {fullResponse.task_title}
+                {taskTitle}
               </div>
             </div>
           </div>
@@ -255,28 +262,31 @@ export default function Message({ message, isLast }) {
         
         {/* Task content with improved styling */}
         <div className={`p-5 ${taskColors.bg} bg-opacity-30`}>
-          {/* Render matrix table if it exists */}
-          {fullResponse.matrix_data && Object.keys(fullResponse.matrix_data).length > 0 && (
-            renderMatrixTable(fullResponse.matrix_data)
+          {/* Render matrix table if it exists - check both structures */}
+          {((taskData.matrix_data && Object.keys(taskData.matrix_data).length > 0) ||
+            (taskData.task_result && taskData.task_result.matrix_data && Object.keys(taskData.task_result.matrix_data).length > 0)) && (
+            renderMatrixTable(taskData.matrix_data || (taskData.task_result && taskData.task_result.matrix_data))
           )}
           
           {/* Fallback for tasks without matrix data */}
-          {(!fullResponse.matrix_data || Object.keys(fullResponse.matrix_data).length === 0) && fullResponse.raw_result && (
+          {((!taskData.matrix_data || Object.keys(taskData.matrix_data).length === 0) &&
+            (!taskData.task_result || !taskData.task_result.matrix_data || Object.keys(taskData.task_result.matrix_data).length === 0)) && 
+            taskData.raw_result && (
             <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <pre className="whitespace-pre-wrap text-sm text-gray-600">
-                {fullResponse.raw_result}
+                {taskData.raw_result}
               </pre>
             </div>
           )}
           
           {/* Display error if present */}
-          {fullResponse.error && (
+          {(taskData.error || (taskData.task_result && taskData.task_result.error)) && (
             <div className="bg-red-50 p-4 rounded-lg border border-red-200 mt-3 shadow-sm">
               <div className="flex items-center gap-2">
                 <i className="fas fa-exclamation-circle text-red-500"></i>
                 <span className="font-medium text-red-700">Error:</span>
               </div>
-              <p className="text-red-600 mt-2 pl-6">{fullResponse.error}</p>
+              <p className="text-red-600 mt-2 pl-6">{taskData.error || (taskData.task_result && taskData.task_result.error)}</p>
             </div>
           )}
         </div>
@@ -292,6 +302,7 @@ export default function Message({ message, isLast }) {
       </motion.div>
     );
   };
+
   
   // Render response details if requested
   const renderResponseDetails = () => {

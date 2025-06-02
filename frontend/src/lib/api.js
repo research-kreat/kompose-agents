@@ -74,12 +74,16 @@ export const api = {
    * @returns {Promise<Object>} - Response data with all tasks results
    */
   generateKomposeIdea: async ({ userId, blockId = null, userPrompt = null }) => {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+    
     // Prepare request body
     const requestBody = {
       user_id: userId
     };
     
-    // Add block ID if provided
+    // Add block ID if provided (for next task generation)
     if (blockId) {
       requestBody.block_id = blockId;
     }

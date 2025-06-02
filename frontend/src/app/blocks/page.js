@@ -77,10 +77,6 @@ export default function BlocksPage() {
     e.stopPropagation();
     e.preventDefault();
     
-    if (!confirm('Are you sure you want to delete this block? This cannot be undone.')) {
-      return;
-    }
-    
     try {
       await api.deleteBlock({ blockId, userId });
       

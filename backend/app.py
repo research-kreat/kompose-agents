@@ -257,7 +257,7 @@ def stream_kompose_idea():
 @app.route('/api/generate-kompose-idea', methods=['POST'])
 def generate_kompose_idea():
     """
-    Generate Kompose business idea tasks one at a time with a Next button
+    Generate Kompose business idea tasks one at a time with a chat-like interface
     """
     data = request.json
     user_id = data.get('user_id')
@@ -291,14 +291,15 @@ def generate_kompose_idea():
         flow_collection.insert_one(flow_status)
         
         # Store user message in history
-        history_collection.insert_one({
-            "user_id": user_id,
-            "block_id": block_id,
-            "role": "user",
-            "message": user_prompt,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
-        })
+        if user_prompt:
+            history_collection.insert_one({
+                "user_id": user_id,
+                "block_id": block_id,
+                "role": "user",
+                "message": user_prompt,
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+            })
         
         # Store block in blocks collection
         blocks_collection.insert_one({
@@ -403,7 +404,7 @@ def generate_kompose_idea():
                     "block_id": block_id,
                     "role": "assistant",
                     "message": f"Task {current_task}: {handler._get_task_title(current_task)}",
-                    "task_result": result_data,  # Changed from "result" to "task_result"
+                    "result": result_data,
                     "task_number": current_task,
                     "created_at": datetime.utcnow(),
                     "updated_at": datetime.utcnow()
@@ -516,7 +517,7 @@ def generate_kompose_idea():
             "error": str(e),
             "success": False
         }), 500
-    
+      
 # DATABASE ENDPOINTS
 @app.route('/api/blocks', methods=['GET'])
 def get_blocks():

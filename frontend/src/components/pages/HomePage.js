@@ -52,7 +52,7 @@ export default function Home() {
             <AgentCard 
               icon="fa-list-ol" 
               title="Step-by-Step Business Generation" 
-              description="Generate a complete business idea one task at a time with more control" 
+              description="{generate-kompose-idea} Generate a complete business idea one task at a time with more control" 
               active={true} 
               link="/kompose/chat" 
             />
@@ -60,7 +60,7 @@ export default function Home() {
             <AgentCard 
               icon="fa-lightbulb" 
               title="One-Click Business Generation" 
-              description="Generate a complete business idea with all 18 steps automatically" 
+              description="{stream-kompose-idea} Generate a complete business idea with all 18 steps automatically" 
               active={true} 
               link="/kompose/generate" 
             />

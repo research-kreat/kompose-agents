@@ -110,42 +110,6 @@ export default function Home() {
           </div>
         </motion.section>
         
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          <div className="bg-primary/5 rounded-lg p-6 border border-primary/20">
-            <h3 className="text-lg font-medium text-gray-800 mb-2">About Kompose</h3>
-            <p className="text-gray-700 mb-4">
-              Kompose is an AI-powered creative framework designed to help you develop innovative business ideas and comprehensive business plans. 
-              Generate startup concepts, analyze markets, and create detailed implementation strategies with ease.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-              <div className="bg-white p-4 rounded shadow-sm">
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-3">
-                  <i className="fas fa-brain text-blue-500"></i>
-                </div>
-                <h4 className="font-medium text-gray-800 mb-1">AI-Powered Analysis</h4>
-                <p className="text-sm text-gray-600">Detailed market and business analysis</p>
-              </div>
-              <div className="bg-white p-4 rounded shadow-sm">
-                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
-                  <i className="fas fa-bolt text-green-500"></i>
-                </div>
-                <h4 className="font-medium text-gray-800 mb-1">One-Click Generation</h4>
-                <p className="text-sm text-gray-600">Complete business ideas in seconds</p>
-              </div>
-              <div className="bg-white p-4 rounded shadow-sm">
-                <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-3">
-                  <i className="fas fa-comments text-purple-500"></i>
-                </div>
-                <h4 className="font-medium text-gray-800 mb-1">Interactive Development</h4>
-                <p className="text-sm text-gray-600">Converse and refine your ideas</p>
-              </div>
-            </div>
-          </div>
-        </motion.section>
       </div>
     </main>
   );

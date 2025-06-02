@@ -269,6 +269,9 @@ def generate_kompose_idea():
     block_id = data.get('block_id')
     user_prompt = data.get('user_prompt')
     
+    # Log the received data for debugging
+    logger.info(f"Received request for generate-kompose-idea: user_id={user_id}, block_id={block_id}, user_prompt={user_prompt}")
+    
     # Initialize handler
     handler = KomposeBlockHandler(db, block_id, user_id)
     
@@ -324,16 +327,70 @@ def generate_kompose_idea():
         }
         one_click_collection.insert_one(one_click_record)
         
+        # Process the initial message to get a response
+        initial_response = handler.initialize_block(user_prompt)
+        
+        # Store the assistant's response in history
+        history_collection.insert_one({
+            "user_id": user_id,
+            "block_id": block_id,
+            "role": "assistant",
+            "message": initial_response.get("suggestion", "Let's generate a business idea!"),
+            "result": initial_response,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        })
+        
         # Return new block information for the first task
         return jsonify({
             "block_id": block_id,
             "next_task": 1,
             "tasks_total": 18,
             "success": True,
-            "message": "Ready to generate first task"
+            "message": "Ready to generate first task",
+            "response": initial_response
         })
     
-    # Block ID exists, find the current state
+    # For existing blocks, handle messages
+    if user_prompt:
+        # Store user message in history
+        history_collection.insert_one({
+            "user_id": user_id,
+            "block_id": block_id,
+            "role": "user",
+            "message": user_prompt,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        })
+        
+        # Get current flow status
+        flow_status_doc = flow_collection.find_one(
+            {"block_id": block_id, "user_id": user_id}
+        )
+        
+        flow_status = flow_status_doc.get("flow_status", {}) if flow_status_doc else {}
+        
+        # Process the message
+        response = handler.process_message(user_prompt, flow_status)
+        
+        # Store the assistant's response
+        history_collection.insert_one({
+            "user_id": user_id,
+            "block_id": block_id,
+            "role": "assistant",
+            "message": response.get("suggestion", "I understand. Let's continue."),
+            "result": response,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        })
+        
+        return jsonify({
+            "block_id": block_id,
+            "success": True,
+            "response": response
+        })
+    
+    # Block ID exists, find the current state for task generation
     one_click_record = one_click_collection.find_one(
         {"block_id": block_id, "user_id": user_id},
         {'_id': 0}  # Exclude MongoDB _id
@@ -517,7 +574,7 @@ def generate_kompose_idea():
             "error": str(e),
             "success": False
         }), 500
-      
+
 # DATABASE ENDPOINTS
 @app.route('/api/blocks', methods=['GET'])
 def get_blocks():

@@ -14,6 +14,7 @@ export default function KomposeChat() {
   const [isClient, setIsClient] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showInfoPanel, setShowInfoPanel] = useState(false);
+  const chatContainerRef = useRef(null);
   
   // Extract necessary state from the store
   const userId = useChatStore(state => state.userId);
@@ -29,6 +30,16 @@ export default function KomposeChat() {
   const createNewBlock = useChatStore(state => state.createNewBlock);
   const setCurrentBlockId = useChatStore(state => state.setCurrentBlockId);
   
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }, [messageHistory, isTyping]);
+  
   // Handle block selection from sidebar
   const handleBlockSelect = (blockId) => {
     // Will be handled by the router, as BlockSidebar navigates to the block route
@@ -39,7 +50,7 @@ export default function KomposeChat() {
     setIsClient(true);
     
     // Initialize user if needed
-    initializeUser();
+    const currentUserId = initializeUser();
     
     // If there's no current block, create a new one
     if (!currentBlockId) {
@@ -52,9 +63,25 @@ export default function KomposeChat() {
         }
       ]);
       
-      // Create a new block
-      const newBlockId = createNewBlock();
-      setCurrentBlockId(newBlockId);
+      // Create a new block asynchronously
+      const createBlock = async () => {
+        try {
+          const newBlockId = await createNewBlock("Kompose Interactive Chat");
+          addLog({
+            type: 'success',
+            message: `Created new block: ${newBlockId.substring(0, 8)}`
+          });
+          setCurrentBlockId(newBlockId);
+        } catch (error) {
+          console.error("Error creating new block:", error);
+          addLog({
+            type: 'error',
+            message: `Failed to create block: ${error.message}`
+          });
+        }
+      };
+      
+      createBlock();
     }
     
     // Cleanup on unmount
@@ -79,11 +106,21 @@ export default function KomposeChat() {
     setIsTyping(true);
   
     try {
+      addLog({
+        type: 'info',
+        message: `Sending message to API: "${content.substring(0, 30)}${content.length > 30 ? '...' : ''}"`
+      });
+      
       // Call the API to get response
       const data = await api.generateKomposeIdea({
         userPrompt: content,
         userId,
         blockId: currentBlockId
+      });
+      
+      addLog({
+        type: 'success',
+        message: `Received response from API`
       });
       
       // Extract response content
@@ -102,19 +139,34 @@ export default function KomposeChat() {
             addMessage({
               role: 'assistant',
               content: data.response.classification_message,
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
+              fullResponse: {
+                ...data.response,
+                display_separately: true
+              }
             });
           }
         } else if (data.response.analysis) {
           responseContent = `${data.response.analysis}\n\n${data.response.suggestion}`;
         } else {
-          responseContent = JSON.stringify(data.response, null, 2);
+          // Fallback to raw response
+          responseContent = "I understand your message. Would you like to create a structured business idea? I can help generate a complete analysis with market opportunities, competition analysis, and more.";
+          fullResponseData = { suggestion: responseContent };
         }
       } else if (data.response && typeof data.response === 'string') {
         responseContent = data.response;
         fullResponseData = { suggestion: data.response };
+      } else if (data.task_result) {
+        // Handle task result response
+        responseContent = `Task ${data.task_number}: ${data.task_title} completed.`;
+        fullResponseData = {
+          task_number: data.task_number,
+          task_title: data.task_title,
+          ...data.task_result
+        };
       } else {
-        responseContent = "I'm not sure how to respond. Can you provide more details?";
+        // Fallback response
+        responseContent = "I'm not sure how to respond. Can you provide more details about your business idea?";
         fullResponseData = { suggestion: responseContent };
       }
       
@@ -204,7 +256,7 @@ export default function KomposeChat() {
 
   return (
     <main className="min-h-screen flex flex-col bg-gray-100">
-      <Header title="Kompose Interactive Mode" />
+      <Header title="Kompose Interactive Mode" blockId={currentBlockId} />
       
       <div className="flex-1 flex h-[calc(100vh-72px)]">
         {/* Sidebar with blocks */}
@@ -241,7 +293,11 @@ export default function KomposeChat() {
               <button
                 onClick={handleClearChat}
                 disabled={messageHistory.length <= 1}
-                className="p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors"
+                className={`p-2 rounded-full ${
+                  messageHistory.length <= 1 
+                    ? 'text-gray-400 cursor-not-allowed' 
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800'
+                } transition-colors`}
                 title="Clear Chat"
               >
                 <i className="fas fa-trash"></i>
@@ -250,7 +306,10 @@ export default function KomposeChat() {
           </div>
           
           <div className="flex-1 flex">
-            <div className="flex-1 p-6 overflow-y-auto flex flex-col gap-4 bg-gray-50">
+            <div 
+              ref={chatContainerRef}
+              className="flex-1 p-6 overflow-y-auto flex flex-col gap-4 bg-gray-50"
+            >
               {/* Message history */}
               {messageHistory.map((message, index) => (
                 <Message 

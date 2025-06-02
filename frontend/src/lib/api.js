@@ -16,12 +16,26 @@ export const api = {
       // Ensure the URL has the correct format
       const apiUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
       
+      // Log request for debugging
+      console.log(`Fetching API: ${apiUrl}`, options);
+      
       const response = await fetch(apiUrl, options);
       
       // Handle non-2xx responses
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorText = await response.text();
+        let errorData;
+        
+        try {
+          // Try to parse as JSON
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          // If not valid JSON, use as plain text
+          errorData = { error: errorText };
+        }
+        
         const errorMessage = errorData.error || `API error: ${response.status} ${response.statusText}`;
+        console.error(`API error response: ${errorMessage}`);
         throw new Error(errorMessage);
       }
       
@@ -60,13 +74,30 @@ export const api = {
       requestBody.user_prompt = userPrompt;
     }
     
-    return api.fetchWithErrorHandling('/generate-kompose-idea', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
+    try {
+      // Add timeout to prevent hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      const response = await api.fetchWithErrorHandling('/generate-kompose-idea', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      // Enhance error with more context
+      if (error.name === 'AbortError') {
+        throw new Error('Request timed out. The server might be overloaded or not responding.');
+      }
+      
+      throw new Error(`Failed to generate Kompose idea: ${error.message}`);
+    }
   },
   
   /**
